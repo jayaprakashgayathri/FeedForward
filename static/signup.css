@@ -1,0 +1,103 @@
+.hidden {
+  display: none !important;
+}
+
+.signup-wide {
+  max-width: 600px !important; /* Wider for the two columns */
+}
+
+.role-options {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.role-box {
+  flex: 1;
+  padding: 2rem;
+  border: 2px solid var(--accent-sand);
+  border-radius: 15px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.role-box:hover {
+  border-color: var(--secondary-sage);
+  transform: translateY(-5px);
+  background: var(--bg-alabaster);
+}
+
+.role-box .icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.role-box h3 {
+  color: var(--primary-earth);
+  margin-bottom: 0.5rem;
+}
+
+/* Grid for the forms */
+.input-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 500px) {
+  .role-options,
+  .input-grid {
+    flex-direction: column;
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Branding Navigation */
+.top-nav {
+  position: absolute;
+  top: 30px;
+  left: 5%;
+  z-index: 100;
+}
+
+.top-nav .logo {
+  font-size: 1.6rem;
+  color: var(--primary-earth);
+  transition: opacity 0.2s;
+}
+
+.top-nav .logo:hover {
+  opacity: 0.8;
+}
+
+/* Hide utility */
+.hidden {
+  display: none !important;
+}
+
+/* Back link styling for buttons */
+button.back-link {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+  margin-bottom: 1rem;
+  color: var(--secondary-sage);
+  font-size: 0.9rem;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .top-nav {
+    width: 100%;
+    left: 0;
+    text-align: center;
+    top: 20px;
+  }
+  .signup-wide {
+    margin-top: 60px; /* Space for the logo on mobile */
+  }
+}

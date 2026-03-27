@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Join FeedForward{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='signup.css') }}" />
+<style>
+  .flash-msg {
+    background: rgba(217,83,79,0.1); color: #d9534f;
+    padding: 12px; border-radius: 8px; text-align: center;
+    margin-bottom: 20px; font-weight: 600; font-size: 0.9rem;
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+<nav class="top-nav">
+  <a href="{{ url_for('index') }}" class="logo">Feed<b>Forward</b></a>
+</nav>
+
+<div class="login-container">
+  <div class="login-card signup-wide">
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}<div class="flash-msg">{{ messages[0] }}</div>{% endif %}
+    {% endwith %}
+
+    <!-- STEP 1: Role Selection -->
+    <div id="role-selection" class="signup-step">
+      <div class="login-header">
+        <a href="{{ url_for('login') }}" class="back-link">← Back to Login</a>
+        <h2>Get Started</h2>
+        <p>Tell us who you are to join the movement.</p>
+      </div>
+      <div class="role-options">
+        <div class="role-box" onclick="showForm('restaurant')" id="role-restaurant">
+          <div class="icon">🍳</div>
+          <h3>Restaurant</h3>
+          <p>Donate surplus food from your business.</p>
+        </div>
+        <div class="role-box" onclick="showForm('charity')" id="role-charity">
+          <div class="icon">🤝</div>
+          <h3>Charity / NGO</h3>
+          <p>Receive and distribute food to those in need.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 2A: Restaurant Form -->
+    <div id="restaurant-form" class="signup-step hidden">
+      <div class="login-header">
+        <button class="back-link" onclick="resetSignup()">← Change Role</button>
+        <h2>Restaurant Registration</h2>
+        <p>Enter your business details to start donating.</p>
+      </div>
+      <form action="{{ url_for('register') }}" method="POST" class="login-form" id="restaurant-reg-form">
+        <input type="hidden" name="role" value="donor" />
+        <div class="input-grid">
+          <div class="input-group">
+            <label for="r-bizName">Business Name *</label>
+            <input type="text" id="r-bizName" name="organization_name" placeholder="e.g. The Golden Grill" required />
+          </div>
+          <div class="input-group">
+            <label for="r-license">FSSAI / License No.</label>
+            <input type="text" id="r-license" name="license_num" placeholder="License number" />
+          </div>
+          <div class="input-group">
+            <label for="r-phone">Phone</label>
+            <input type="tel" id="r-phone" name="phone" placeholder="+91 XXXXX XXXXX" />
+          </div>
+          <div class="input-group">
+            <label for="r-email">Email Address *</label>
+            <input type="email" id="r-email" name="email" placeholder="manager@restaurant.com" required />
+          </div>
+        </div>
+        <div class="input-group">
+          <label for="r-address">Business Address</label>
+          <input type="text" id="r-address" name="address" placeholder="Full street address, City, Pincode" />
+        </div>
+        <div class="input-group">
+          <label for="r-password">Password *</label>
+          <input type="password" id="r-password" name="password" placeholder="••••••••" required minlength="6" />
+        </div>
+        <button type="submit" class="btn-primary btn-full" id="register-restaurant-btn">Create Restaurant Account</button>
+      </form>
+    </div>
+
+    <!-- STEP 2B: Charity Form -->
+    <div id="charity-form" class="signup-step hidden">
+      <div class="login-header">
+        <button class="back-link" onclick="resetSignup()">← Change Role</button>
+        <h2>Charity Registration</h2>
+        <p>Verify your organization to start requesting food.</p>
+      </div>
+      <form action="{{ url_for('register') }}" method="POST" class="login-form" id="charity-reg-form">
+        <input type="hidden" name="role" value="charity" />
+        <div class="input-grid">
+          <div class="input-group">
+            <label for="c-orgName">Organization Name *</label>
+            <input type="text" id="c-orgName" name="organization_name" placeholder="NGO Name" required />
+          </div>
+          <div class="input-group">
+            <label for="c-regNum">Registration / Tax ID</label>
+            <input type="text" id="c-regNum" name="reg_num" placeholder="Gov / Trust ID" />
+          </div>
+          <div class="input-group">
+            <label for="c-phone">Phone</label>
+            <input type="tel" id="c-phone" name="phone" placeholder="+91 XXXXX XXXXX" />
+          </div>
+          <div class="input-group">
+            <label for="c-email">Email *</label>
+            <input type="email" id="c-email" name="email" placeholder="contact@charity.org" required />
+          </div>
+        </div>
+        <div class="input-group">
+          <label for="c-address">Office Address</label>
+          <input type="text" id="c-address" name="address" placeholder="Office Location" />
+        </div>
+        <div class="input-group">
+          <label for="c-password">Password *</label>
+          <input type="password" id="c-password" name="password" placeholder="••••••••" required minlength="6" />
+        </div>
+        <button type="submit" class="btn-secondary btn-full" id="register-charity-btn">Create Charity Account</button>
+      </form>
+    </div>
+
+  </div><!-- /login-card -->
+</div><!-- /login-container -->
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showForm(role) {
+  document.getElementById('role-selection').classList.add('hidden');
+  document.getElementById(role + '-form').classList.remove('hidden');
+}
+function resetSignup() {
+  document.querySelectorAll('.signup-step').forEach(s => s.classList.add('hidden'));
+  document.getElementById('role-selection').classList.remove('hidden');
+}
+</script>
+{% endblock %}

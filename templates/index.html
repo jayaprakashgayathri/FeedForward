@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}FeedForward | Sustainable Food Donation{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+<style>
+  .flash-msg {
+    position: fixed; top: 90px; left: 50%; transform: translateX(-50%);
+    background: var(--theme-dark); color: #fff;
+    padding: 12px 28px; border-radius: 50px;
+    font-size: 0.9rem; font-weight: 600; z-index: 3000;
+    box-shadow: 0 8px 24px rgba(9,20,19,0.15);
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+<nav class="navbar">
+  <a href="{{ url_for('index') }}" class="logo">Feed<b>Forward</b></a>
+  <ul class="nav-links">
+    <li><a href="#how">How it Works</a></li>
+    <li><a href="#stats">Impact</a></li>
+    <li><a href="{{ url_for('login') }}" class="btn-outline">Login</a></li>
+    <li><a href="{{ url_for('register') }}" class="btn-primary">Sign Up</a></li>
+  </ul>
+</nav>
+
+<header class="hero">
+  <div class="hero-content">
+    <h1>
+      Bridging the gap between <span class="highlight">surplus</span> and
+      <span class="highlight">need</span>.
+    </h1>
+    <p>
+      A seamless management platform for restaurants to donate excess food
+      to local charities in real-time.
+    </p>
+
+    <div class="hero-btns">
+      <div class="cta-card restaurant-card">
+        <h3>For Restaurants</h3>
+        <p>Reduce waste and give back to your community.</p>
+        <a href="{{ url_for('register') }}" class="btn-primary">Donate Food</a>
+      </div>
+      <div class="cta-card charity-card">
+        <h3>For Charities</h3>
+        <p>Find and claim fresh surplus for those in need.</p>
+        <a href="{{ url_for('register') }}" class="btn-secondary">Request Food</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section class="stats-bar" id="stats">
+  <div class="stat-item">
+    <h2>500+</h2>
+    <p>Meals Saved</p>
+  </div>
+  <div class="stat-item">
+    <h2>120</h2>
+    <p>Partner Restaurants</p>
+  </div>
+  <div class="stat-item">
+    <h2>45</h2>
+    <p>Active Charities</p>
+  </div>
+</section>
+
+<section id="how" style="padding: 4rem 5%; max-width: 1100px; margin: 0 auto;">
+  <h2 style="font-size:2.2rem;font-weight:800;margin-bottom:2rem;letter-spacing:-0.03em;">How it works</h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.5rem;">
+    {% for step in [
+      ("01","Register","Sign up as a restaurant or charity in under 2 minutes."),
+      ("02","Post or Browse","Restaurants broadcast surplus; charities browse live listings."),
+      ("03","Request & Accept","Charities request, restaurants confirm in real time."),
+      ("04","Track Impact","Full history, metrics and logs for both sides.")
+    ] %}
+    <div style="background:#fff;border-radius:24px;padding:1.8rem;border:1px solid var(--theme-border);box-shadow:0 8px 20px rgba(9,20,19,0.04);">
+      <div style="font-size:2.5rem;font-weight:800;color:var(--theme-bg);margin-bottom:1rem;">{{ step[0] }}</div>
+      <h4 style="font-size:1rem;font-weight:700;margin-bottom:0.5rem;">{{ step[1] }}</h4>
+      <p style="font-size:0.85rem;opacity:0.65;line-height:1.55;">{{ step[2] }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

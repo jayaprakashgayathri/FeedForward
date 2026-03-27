@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% block title %}Browse Donations | FeedForward{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='charity.css') }}" />
+<style>
+  .flash-msg {
+    position: fixed; top: 90px; left: 50%; transform: translateX(-50%);
+    background: var(--theme-dark); color: #fff;
+    padding: 12px 28px; border-radius: 50px;
+    font-size: 0.9rem; font-weight: 600; z-index: 3000;
+    box-shadow: 0 8px 24px rgba(9,20,19,0.15);
+  }
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(9,20,19,0.55);
+    backdrop-filter: blur(4px);
+    z-index: 4000;
+    display: flex; align-items: center; justify-content: center;
+    padding: 2rem;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal-box {
+    background: #fff;
+    border-radius: 24px;
+    padding: 2.5rem;
+    width: 100%; max-width: 460px;
+    box-shadow: 0 24px 48px rgba(9,20,19,0.15);
+    transform: translateY(20px);
+    transition: transform 0.25s ease;
+  }
+  .modal-overlay.open .modal-box { transform: translateY(0); }
+  .modal-box h3 { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.4rem; letter-spacing: -0.02em; }
+  .modal-box p  { font-size: 0.88rem; color: rgba(9,20,19,0.6); margin-bottom: 1.5rem; }
+  .modal-food-tag {
+    background: rgba(176,228,204,0.4);
+    border: 1px solid rgba(40,90,72,0.2);
+    border-radius: 10px; padding: 12px 16px;
+    font-size: 0.9rem; font-weight: 600;
+    margin-bottom: 1.5rem;
+    color: var(--theme-dark);
+  }
+  .modal-actions { display: flex; gap: 10px; margin-top: 1.5rem; }
+  .filter-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.5rem; }
+  .filter-chip {
+    padding: 7px 18px; border-radius: 40px;
+    border: 1.5px solid rgba(9,20,19,0.12);
+    background: rgba(255,255,255,0.6);
+    font-size: 0.75rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    color: rgba(9,20,19,0.6);
+    text-decoration: none; transition: all 0.2s;
+  }
+  .filter-chip:hover { border-color: var(--theme-primary); color: var(--theme-primary); }
+  .filter-chip.active { background: var(--theme-primary); color: #fff; border-color: var(--theme-primary); }
+  .already-requested {
+    background: rgba(176,228,204,0.35);
+    color: var(--theme-primary);
+    border: 1px solid rgba(40,90,72,0.2);
+    font-size: 0.78rem; font-weight: 700;
+    padding: 10px; border-radius: 50px;
+    text-align: center; width: 100%;
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+<nav class="top-nav">
+  <a href="{{ url_for('index') }}" class="logo">Feed<b>Forward</b></a>
+  <div class="nav-user">
+    <span class="portal-label">{{ current_user.organization_name }}</span>
+    <a href="{{ url_for('charity_history') }}"
+       style="color:var(--theme-dark);font-size:1.1rem;text-decoration:none;margin-right:4px;"
+       title="Request History"><i class="fa-solid fa-clock-rotate-left"></i></a>
+    <a href="{{ url_for('logout') }}" class="logout-btn" style="text-decoration:none;">Logout</a>
+  </div>
+</nav>
+
+<main class="charity-layout">
+
+  <!-- LEFT: Browse Listings -->
+  <div class="browse-content">
+    <header class="browse-header">
+      <h1>Find Food for Your Community.</h1>
+      <p>Browse active surplus listings from local restaurants and claim them instantly.</p>
+
+      <div class="search-section">
+        <form method="GET" action="{{ url_for('charity_browse') }}" style="display:flex;gap:10px;align-items:center;width:100%;max-width:650px;">
+          <div class="search-box" style="flex:1;">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" name="search" placeholder="Search by food item or restaurant name..."
+                   value="{{ search }}" id="search-input" />
+          </div>
+          <button type="submit" class="btn-primary btn-sm" style="white-space:nowrap;border-radius:50px;padding:12px 20px;">Search</button>
+        </form>
+      </div>
+
+      <div class="filter-chips" style="margin-top:1rem;">
+        <a href="{{ url_for('charity_browse', search=search) }}"
+           class="filter-chip {% if category=='all' %}active{% endif %}">All</a>
+        <a href="{{ url_for('charity_browse', category='perishable', search=search) }}"
+           class="filter-chip {% if category=='perishable' %}active{% endif %}">Perishable</a>
+        <a href="{{ url_for('charity_browse', category='produce', search=search) }}"
+           class="filter-chip {% if category=='produce' %}active{% endif %}">Produce</a>
+        <a href="{{ url_for('charity_browse', category='non-perishable', search=search) }}"
+           class="filter-chip {% if category=='non-perishable' %}active{% endif %}">Non-Perishable</a>
+      </div>
+    </header>
+
+    <section class="listings-grid" id="listings-grid">
+      {% if listings %}
+        {% for d in listings %}
+        <div class="listing-card" id="listing-{{ d.id }}">
+          <div class="card-meta">
+            <span class="editorial-pill">{{ d.category_label }}</span>
+            <span class="expiry-tag"><i class="fa-regular fa-clock"></i> By {{ d.pickup_deadline }}</span>
+          </div>
+          <h3>{{ d.food_name }}</h3>
+          <p class="restaurant-name">
+            <i class="fa-solid fa-shop"></i> {{ d.donor.organization_name }}
+          </p>
+          <div class="compact-details">
+            <div><strong>Quantity</strong><span>{{ d.quantity }} {{ d.unit }}</span></div>
+            <div><strong>Posted</strong><span>{{ d.time_ago }}</span></div>
+          </div>
+          {% if d.notes %}
+          <p style="font-size:0.78rem;color:rgba(9,20,19,0.55);font-style:italic;margin-bottom:14px;">{{ d.notes }}</p>
+          {% endif %}
+
+          {% if d.id in my_req_ids %}
+            <div class="already-requested"><i class="fa-solid fa-check"></i> Request Sent</div>
+          {% else %}
+            <button class="btn-primary btn-sm full-width" id="request-btn-{{ d.id }}"
+                    onclick="openModal({{ d.id }}, '{{ d.food_name|e }}', '{{ d.quantity }} {{ d.unit }}', '{{ d.donor.organization_name|e }}')">
+              Request Donation
+            </button>
+          {% endif %}
+        </div>
+        {% endfor %}
+      {% else %}
+        <div style="grid-column:1/-1;text-align:center;padding:3rem;color:rgba(9,20,19,0.4);">
+          <i class="fa-solid fa-seedling" style="font-size:2.5rem;display:block;margin-bottom:1rem;"></i>
+          {% if search %}No listings match "{{ search }}".{% else %}No active donations right now — check back soon!{% endif %}
+        </div>
+      {% endif %}
+    </section>
+  </div>
+
+  <!-- RIGHT SIDEBAR: Broadcast / Info -->
+  <aside class="request-sidebar">
+    <h2>Your Dashboard</h2>
+    <p>Click "Request Donation" on any listing to send a request to the restaurant. They'll review and accept or decline.</p>
+
+    <div style="background:rgba(176,228,204,0.25);border:1px solid rgba(40,90,72,0.15);border-radius:16px;padding:1.2rem;margin-bottom:1.5rem;">
+      <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--theme-primary);margin-bottom:8px;">How it works</div>
+      <ul style="font-size:0.85rem;line-height:1.7;list-style:none;padding:0;">
+        <li>🟢 Browse active listings</li>
+        <li>📩 Click "Request Donation"</li>
+        <li>⏳ Wait for restaurant approval</li>
+        <li>✅ Pick up your donation</li>
+      </ul>
+    </div>
+
+    <a href="{{ url_for('charity_history') }}"
+       class="btn-primary full-width" style="text-decoration:none;display:flex;align-items:center;justify-content:center;gap:10px;padding:1.2rem;">
+      <i class="fa-solid fa-clock-rotate-left"></i> View Request History
+    </a>
+  </aside>
+
+</main>
+
+<!-- REQUEST MODAL -->
+<div class="modal-overlay" id="req-modal">
+  <div class="modal-box">
+    <h3>Request Donation</h3>
+    <p id="modal-subtitle">Sending a request to the restaurant</p>
+    <div class="modal-food-tag" id="modal-food-tag"></div>
+    <form method="POST" id="modal-form">
+      <div class="form-group">
+        <label style="font-size:0.85rem;font-weight:700;display:block;margin-bottom:8px;">Message to Restaurant (optional)</label>
+        <div class="input-wrap">
+          <textarea name="message" id="modal-message"
+                    placeholder="e.g. We serve 50 residents nightly and can pick up by 7pm..."
+                    style="min-height:90px;"></textarea>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="submit" class="btn-primary" style="flex:1;" id="modal-submit-btn">
+          <i class="fa-solid fa-paper-plane"></i> Send Request
+        </button>
+        <button type="button" class="btn-primary" onclick="closeModal()"
+                style="flex:1;background:transparent;color:var(--theme-dark);border:1.5px solid var(--theme-dark);box-shadow:none;">
+          Cancel
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function openModal(id, name, qty, restaurant) {
+  document.getElementById('modal-form').action = '/donation/' + id + '/request';
+  document.getElementById('modal-subtitle').textContent = 'Requesting from ' + restaurant;
+  document.getElementById('modal-food-tag').innerHTML =
+    '<i class="fa-solid fa-box" style="color:var(--theme-primary);margin-right:8px;"></i>' + qty + ' — ' + name;
+  document.getElementById('modal-message').value = '';
+  document.getElementById('req-modal').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('req-modal').classList.remove('open');
+}
+document.getElementById('req-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Login | FeedForward{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+<link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}" />
+<style>
+  .flash-msg {
+    background: rgba(217,83,79,0.1); color: #d9534f;
+    padding: 12px; border-radius: 8px; text-align: center;
+    margin-bottom: 20px; font-weight: 600; font-size: 0.9rem;
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+<nav class="top-nav">
+  <a href="{{ url_for('index') }}" class="logo">Feed<b>Forward</b></a>
+</nav>
+
+<div class="login-container">
+  <div class="login-card">
+    <div class="login-header">
+      <a href="{{ url_for('index') }}" class="back-link">← Back to Home</a>
+      <h2>Welcome Back</h2>
+      <p>Please enter your details to sign in.</p>
+    </div>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flash-msg">{{ messages[0] }}</div>
+      {% endif %}
+    {% endwith %}
+
+    <form action="{{ url_for('login') }}" method="POST" class="login-form" id="login-form">
+      <div class="input-group">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" name="email" placeholder="Enter your email" required />
+      </div>
+      <div class="input-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="••••••••" required />
+      </div>
+      <div class="form-options">
+        <label class="remember-me"><input type="checkbox" /> Remember me</label>
+        <a href="#" class="forgot-password">Forgot password?</a>
+      </div>
+      <button type="submit" class="btn-primary btn-full" id="login-btn">Sign In</button>
+    </form>
+
+    <div class="login-footer">
+      <p>Don't have an account? <a href="{{ url_for('register') }}">Create one for free</a></p>
+    </div>
+  </div>
+</div>
+{% endblock %}

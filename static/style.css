@@ -1,0 +1,241 @@
+/* --- 1. GLOBAL VARIABLES (60-30-10 Rule) --- */
+:root {
+  --theme-dark: #091413; /* 10% - Text, Shadows, Deep Accents */
+  --theme-primary: #285a48; /* 30% - Buttons, Logos, Highlights */
+  --theme-bg: #b0e4cc; /* 60% - The Mint Canvas Background */
+  --theme-surface: #ffffff; /* Crisp White for floating cards */
+  --theme-border: rgba(9, 20, 19, 0.08); /* Faint dark border */
+}
+
+/* --- 2. RESETS & TYPOGRAPHY --- */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--theme-bg);
+  color: var(--theme-dark);
+  font-family: "Inter", sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  letter-spacing: -0.03em; /* Editorial tight spacing */
+}
+
+/* --- 3. NAVIGATION BAR --- */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 5%;
+  background: rgba(255, 255, 255, 0.7); /* Frosted white glass on Mint */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  border-bottom: 1px solid var(--theme-border);
+  box-shadow: 0 4px 20px rgba(9, 20, 19, 0.03);
+}
+
+.logo {
+  font-size: 1.6rem;
+  color: var(--theme-dark);
+  letter-spacing: -0.02em;
+  text-decoration: none;
+  font-weight: 800;
+}
+
+.logo b {
+  color: var(--theme-primary);
+}
+
+.nav-links {
+  display: flex;
+  list-style: none;
+  align-items: center;
+  gap: 2.5rem;
+}
+
+.nav-links a {
+  text-decoration: none;
+  color: var(--theme-dark);
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: color 0.2s;
+}
+
+.nav-links a:hover {
+  color: var(--theme-primary);
+}
+
+/* --- 4. HERO SECTION --- */
+.hero {
+  padding: 6rem 5% 6rem;
+  text-align: center;
+}
+
+.hero h1 {
+  font-size: 4.2rem;
+  font-weight: 800;
+  max-width: 850px;
+  margin: 0 auto 1.5rem;
+  line-height: 1.1;
+  color: var(--theme-dark);
+}
+
+.highlight {
+  color: var(--theme-primary);
+}
+
+.hero p {
+  font-size: 1.2rem;
+  max-width: 600px;
+  margin: 0 auto 3rem;
+  opacity: 0.8;
+  color: var(--theme-dark);
+}
+
+/* --- 5. CTA CARDS (Floating White Cards) --- */
+.hero-btns {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.cta-card {
+  background: var(--theme-surface);
+  padding: 3rem 2.5rem;
+  border-radius: 32px;
+  width: 350px;
+  border: none;
+  box-shadow: 0 20px 40px rgba(9, 20, 19, 0.05); /* Soft dark shadow */
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cta-card:hover {
+  transform: translateY(-8px);
+}
+
+.cta-card h3 {
+  margin-bottom: 1rem;
+  color: var(--theme-dark);
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+
+.cta-card p {
+  font-size: 0.95rem;
+  margin-bottom: 2.5rem;
+  line-height: 1.6;
+  color: var(--theme-dark);
+  opacity: 0.8;
+}
+
+/* --- 6. BUTTONS (Editorial Pill Shape) --- */
+button,
+.btn-solid,
+.btn-outline,
+.btn-primary,
+.btn-secondary {
+  padding: 14px 32px;
+  border-radius: 50px;
+  cursor: pointer;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+  font-size: 0.9rem;
+  border: none;
+  display: inline-block;
+}
+
+.btn-primary,
+.btn-solid,
+.btn-secondary {
+  background: var(--theme-primary);
+  color: var(--theme-surface);
+  box-shadow: 0 8px 24px rgba(40, 90, 72, 0.25); /* Pine glowing shadow */
+}
+
+.btn-primary:hover,
+.btn-solid:hover,
+.btn-secondary:hover {
+  background: var(--theme-dark);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(9, 20, 19, 0.2);
+}
+
+.btn-outline {
+  border: 1.5px solid var(--theme-dark);
+  color: var(--theme-dark);
+  background: transparent;
+}
+
+.btn-outline:hover {
+  background: var(--theme-dark);
+  color: var(--theme-surface);
+}
+
+/* --- 7. STATS BAR (High Contrast Inverse) --- */
+.stats-bar {
+  background: var(--theme-dark); /* Deep dark background */
+  color: var(--theme-surface);
+  display: flex;
+  justify-content: space-around;
+  padding: 4rem 5%;
+  margin-top: 4rem;
+  margin-bottom: 4rem;
+  border-radius: 32px;
+  margin-left: 3%;
+  margin-right: 3%;
+  box-shadow: 0 20px 40px rgba(9, 20, 19, 0.15);
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-item h2 {
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: var(--theme-bg); /* Mint colored numbers! */
+  margin-bottom: 0.5rem;
+}
+
+.stat-item p {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+/* --- 8. RESPONSIVE QUERIES --- */
+@media (max-width: 768px) {
+  .hero h1 {
+    font-size: 2.8rem;
+  }
+  .hero-btns {
+    flex-direction: column;
+    align-items: center;
+  }
+  .stats-bar {
+    flex-direction: column;
+    gap: 3rem;
+    border-radius: 24px;
+    padding: 3rem 5%;
+  }
+  .cta-card {
+    width: 100%;
+    max-width: 380px;
+  }
+}
