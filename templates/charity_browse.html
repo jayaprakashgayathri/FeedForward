@@ -8,8 +8,13 @@
     position: fixed; top: 90px; left: 50%; transform: translateX(-50%);
     background: var(--theme-dark); color: #fff;
     padding: 12px 28px; border-radius: 50px;
-    font-size: 0.9rem; font-weight: 600; z-index: 3000;
+    font-size: 0.9rem; font-weight: 600; z-index: 5000; /* Increased z-index */
     box-shadow: 0 8px 24px rgba(9,20,19,0.15);
+    animation: slideDown 0.4s ease-out;
+  }
+  @keyframes slideDown {
+    from { transform: translate(-50%, -20px); opacity: 0; }
+    to { transform: translate(-50%, 0); opacity: 1; }
   }
   /* Modal */
   .modal-overlay {
@@ -68,6 +73,14 @@
 {% endblock %}
 
 {% block body %}
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    {% for message in messages %}
+      <div class="flash-msg" id="flash-message-{{ loop.index }}">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
 <nav class="top-nav">
   <a href="{{ url_for('index') }}" class="logo">Feed<b>Forward</b></a>
   <div class="nav-user">
@@ -81,7 +94,6 @@
 
 <main class="charity-layout">
 
-  <!-- LEFT: Browse Listings -->
   <div class="browse-content">
     <header class="browse-header">
       <h1>Find Food for Your Community.</h1>
@@ -149,7 +161,6 @@
     </section>
   </div>
 
-  <!-- RIGHT SIDEBAR: Broadcast / Info -->
   <aside class="request-sidebar">
     <h2>Your Dashboard</h2>
     <p>Click "Request Donation" on any listing to send a request to the restaurant. They'll review and accept or decline.</p>
@@ -172,7 +183,6 @@
 
 </main>
 
-<!-- REQUEST MODAL -->
 <div class="modal-overlay" id="req-modal">
   <div class="modal-box">
     <h3>Request Donation</h3>
@@ -203,6 +213,15 @@
 
 {% block scripts %}
 <script>
+// Auto-hide flash messages after 4 seconds
+setTimeout(() => {
+  const flashes = document.querySelectorAll('.flash-msg');
+  flashes.forEach(f => {
+    f.style.opacity = '0';
+    setTimeout(() => f.remove(), 500);
+  });
+}, 4000);
+
 function openModal(id, name, qty, restaurant) {
   document.getElementById('modal-form').action = '/donation/' + id + '/request';
   document.getElementById('modal-subtitle').textContent = 'Requesting from ' + restaurant;
