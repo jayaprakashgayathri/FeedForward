@@ -35,7 +35,6 @@ def create_app(config=None):
 
 @login_manager.user_loader
 def load_user(uid):
-    # Modernized: Use session.get instead of Query.get
     return db.session.get(User, int(uid))
 
 def _register_routes(app):  # noqa: C901
@@ -66,6 +65,11 @@ def _register_routes(app):  # noqa: C901
                 flash("Please fill in all required fields.")
                 return redirect(url_for("register"))
             
+            # FIXED: Catch invalid roles before checking for existing accounts
+            if role not in ("donor", "charity"):
+                flash("Invalid role selected.")
+                return redirect(url_for("register"))
+                
             if User.query.filter_by(email=email).first():
                 flash("An account with this email already exists.")
                 return redirect(url_for("register"))
@@ -178,7 +182,6 @@ def _register_routes(app):  # noqa: C901
     @app.route("/donation/<int:did>/delete", methods=["POST"])
     @login_required
     def delete_donation(did):
-        # Modernized: session.get
         d = db.session.get(Donation, did)
         if not d:
             flash("Donation not found.")
@@ -195,7 +198,6 @@ def _register_routes(app):  # noqa: C901
     @app.route("/request/<int:rid>/accept", methods=["POST"])
     @login_required
     def accept_request(rid):
-        # Modernized: session.get
         r = db.session.get(DonationRequest, rid)
         if not r or r.donation.donor_id != current_user.id:
             flash("Unauthorized.")
@@ -319,7 +321,7 @@ def _register_routes(app):  # noqa: C901
             flash("This donation is no longer available.")
             return redirect(url_for("charity_browse"))
         
-        # FIXED: Ensure flash message exactly matches "You have already requested this donation."
+        # FIXED: Ensure flash message exactly matches test expectation
         if DonationRequest.query.filter_by(donation_id=did, charity_id=current_user.id).first():
             flash("You have already requested this donation.")
             return redirect(url_for("charity_browse"))
@@ -425,7 +427,6 @@ def _register_routes(app):  # noqa: C901
             my_requests=reqs, filter_status=f,
             total=total, accepted=accepted, completed=completed,
             my_broadcasts=my_broadcasts)
-
 
 if __name__ == "__main__":
     application = create_app()
