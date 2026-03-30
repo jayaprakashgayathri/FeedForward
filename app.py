@@ -66,7 +66,7 @@ def _register_routes(app):  # noqa: C901
                 flash("Please fill in all required fields.")
                 return redirect(url_for("register"))
 
-            # FIXED: STRICT ROLE VALIDATION (Fixes test_invalid_role_rejected)
+            # FIXED: Validate role strictly to pass test_invalid_role_rejected
             if role not in ("donor", "charity"):
                 flash("Invalid role selected.")
                 return redirect(url_for("register"))
