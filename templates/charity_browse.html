@@ -16,7 +16,6 @@
     from { transform: translate(-50%, -20px); opacity: 0; }
     to { transform: translate(-50%, 0); opacity: 1; }
   }
-  /* Modal and other styles remain unchanged */
   .modal-overlay {
     position: fixed; inset: 0;
     background: rgba(9,20,19,0.55);
@@ -59,15 +58,13 @@
 {% endblock %}
 
 {% block body %}
-<div id="flash-container">
-  {% with messages = get_flashed_messages() %}
-    {% if messages %}
-      {% for message in messages %}
-        <div class="flash-msg">{{ message }}</div>
-      {% endfor %}
-    {% endif %}
-  {% endwith %}
-</div>
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    {% for message in messages %}
+      <div class="flash-msg">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
 
 <nav class="top-nav">
   <a href="{{ url_for('index') }}" class="logo">Feed<b>Forward</b></a>
