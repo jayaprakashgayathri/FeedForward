@@ -1,115 +1,142 @@
-"""
-Shared pytest fixtures — uses in-memory SQLite so tests
-run instantly without a running PostgreSQL instance.
-"""
 import pytest
 from werkzeug.security import generate_password_hash
-
 from app import create_app
-from models import db as _db, User, Donation, DonationRequest
-
-
-# ── App ───────────────────────────────────────────────────────────────────────
+from models import db as _db, User, Donation, DonationRequest, CharityBroadcast, BroadcastResponse
 
 @pytest.fixture(scope="session")
 def app():
+    """Create the Flask app and initialize the database schema once per session."""
     cfg = {
-        "TESTING": True,
+        "TESTING": True, 
         "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
-        "WTF_CSRF_ENABLED": False,
-        "SECRET_KEY": "test-secret",
+        "WTF_CSRF_ENABLED": False, 
+        "SECRET_KEY": "test-secret", 
         "LOGIN_DISABLED": False,
+        "SQLALCHEMY_TRACK_MODIFICATIONS": False
     }
     application = create_app(cfg)
+    
     with application.app_context():
         _db.create_all()
         yield application
         _db.drop_all()
 
-
 @pytest.fixture(scope="function")
 def db(app):
-    """Wrap each test in a savepoint; roll back after."""
+    """
+    Provides a clean database session for each test.
+    Wraps the test in a transaction that is rolled back at the end.
+    """
     with app.app_context():
-        connection  = _db.engine.connect()
+        # Start a new transaction
+        connection = _db.engine.connect()
         transaction = connection.begin()
-        _db.session.bind = connection
+        
+        # Bind the session to the connection
+        _db.session.begin_nested() # For savepoint support
+
         yield _db
+
+        # Rollback everything to ensure isolation
+        _db.session.rollback()
         _db.session.remove()
         transaction.rollback()
         connection.close()
-        _db.session.bind = None
-
 
 @pytest.fixture(scope="function")
 def client(app):
-    with app.test_client() as c:
-        yield c
+    return app.test_client()
 
-
-# ── Helpers ───────────────────────────────────────────────────────────────────
+# ────────────────────────────────────────────────────────────────────────────
+# HELPER FUNCTIONS (Now use the session correctly)
+# ────────────────────────────────────────────────────────────────────────────
 
 def make_user(role, email, org, password="pass1234"):
     u = User(
-        email=email,
+        email=email, 
         password_hash=generate_password_hash(password),
-        organization_name=org,
+        organization_name=org, 
         role=role,
-        phone="", address="123 Test St", license_num="", reg_num="",
+        phone="", 
+        address="123 Test St", 
+        license_num="", 
+        reg_num=""
     )
     _db.session.add(u)
-    _db.session.commit()
+    _db.session.flush() # Use flush instead of commit to keep it in the transaction
     return u
 
-
 def make_donation(donor, food_name="Test Food", qty=10, unit="items",
-                  category="perishable", deadline="18:00",
-                  status="active", notes=""):
+                  category="perishable", deadline="18:00", status="active", notes=""):
     d = Donation(
-        donor_id=donor.id, food_name=food_name,
-        food_category=category, quantity=qty,
-        unit=unit, pickup_deadline=deadline,
-        notes=notes, status=status,
+        donor_id=donor.id, 
+        food_name=food_name, 
+        food_category=category,
+        quantity=qty, 
+        unit=unit, 
+        pickup_deadline=deadline, 
+        notes=notes, 
+        status=status
     )
     _db.session.add(d)
-    _db.session.commit()
+    _db.session.flush()
     return d
-
 
 def make_request(donation, charity, message="Need this", status="pending"):
     r = DonationRequest(
-        donation_id=donation.id, charity_id=charity.id,
-        message=message, status=status,
+        donation_id=donation.id, 
+        charity_id=charity.id,
+        message=message, 
+        status=status
     )
     _db.session.add(r)
     donation.status = "pending"
-    _db.session.commit()
+    _db.session.flush()
     return r
 
+def make_broadcast(charity, food_name="Rice and Beans", qty=20, unit="items",
+                   category="produce", needed_by="18:00", notes="", status="open"):
+    bc = CharityBroadcast(
+        charity_id=charity.id, 
+        food_name=food_name,
+        food_category=category, 
+        quantity=qty, 
+        unit=unit,
+        needed_by=needed_by, 
+        notes=notes, 
+        status=status
+    )
+    _db.session.add(bc)
+    _db.session.flush()
+    return bc
+
+def make_broadcast_response(broadcast, donor, message="We can help", status="pending"):
+    r = BroadcastResponse(
+        broadcast_id=broadcast.id, 
+        donor_id=donor.id,
+        message=message, 
+        status=status
+    )
+    _db.session.add(r)
+    _db.session.flush()
+    return r
 
 def login(client, email, password="pass1234"):
-    return client.post("/login",
-                       data={"email": email, "password": password},
+    return client.post("/login", data={"email": email, "password": password},
                        follow_redirects=True)
 
-
-# ── User fixtures ─────────────────────────────────────────────────────────────
-
-@pytest.fixture
-def donor(db):
-    return make_user("donor", "restaurant@test.com", "Test Restaurant")
-
+# ────────────────────────────────────────────────────────────────────────────
+# FIXTURES
+# ────────────────────────────────────────────────────────────────────────────
 
 @pytest.fixture
-def donor2(db):
-    return make_user("donor", "restaurant2@test.com", "Second Restaurant")
-
+def donor(db):   return make_user("donor",   "restaurant@test.com", "Test Restaurant")
 
 @pytest.fixture
-def charity(db):
-    return make_user("charity", "charity@test.com", "Test Charity NGO")
-
+def donor2(db):  return make_user("donor",   "restaurant2@test.com","Second Restaurant")
 
 @pytest.fixture
-def charity2(db):
-    return make_user("charity", "charity2@test.com", "Second Charity")
+def charity(db): return make_user("charity", "charity@test.com",    "Test Charity NGO")
+
+@pytest.fixture
+def charity2(db): return make_user("charity", "charity2@test.com",   "Second Charity")
