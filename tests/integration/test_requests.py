@@ -235,5 +235,3 @@ class TestCharityHistory:
         r = client.get("/charity/history", follow_redirects=True)
         assert r.status_code == 200
         # Redirected away from charity history
-
-}
