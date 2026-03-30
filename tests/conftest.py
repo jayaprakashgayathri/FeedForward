@@ -3,52 +3,49 @@ from werkzeug.security import generate_password_hash
 from app import create_app
 from models import db as _db, User, Donation, DonationRequest, CharityBroadcast, BroadcastResponse
 
+
 @pytest.fixture(scope="session")
 def app():
-    """Create the Flask app and initialize the database schema once per session."""
     cfg = {
         "TESTING": True, 
         "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
         "WTF_CSRF_ENABLED": False, 
         "SECRET_KEY": "test-secret", 
-        "LOGIN_DISABLED": False,
-        "SQLALCHEMY_TRACK_MODIFICATIONS": False
+        "LOGIN_DISABLED": False
     }
     application = create_app(cfg)
-    
     with application.app_context():
         _db.create_all()
         yield application
         _db.drop_all()
 
+
 @pytest.fixture(scope="function")
 def db(app):
-    """
-    Provides a clean database session for each test.
-    Wraps the test in a transaction that is rolled back at the end.
-    """
     with app.app_context():
-        # Start a new transaction
+        # Connect to the database and start a transaction
         connection = _db.engine.connect()
         transaction = connection.begin()
         
-        # Bind the session to the connection
-        _db.session.begin_nested() # For savepoint support
-
+        # Bind the session to this specific connection
+        _db.session.bind = connection
+        
         yield _db
-
-        # Rollback everything to ensure isolation
-        _db.session.rollback()
+        
+        # Roll back everything done during the test
         _db.session.remove()
         transaction.rollback()
         connection.close()
 
+
 @pytest.fixture(scope="function")
 def client(app):
-    return app.test_client()
+    with app.test_client() as c:
+        yield c
+
 
 # ────────────────────────────────────────────────────────────────────────────
-# HELPER FUNCTIONS (Now use the session correctly)
+# HELPER FUNCTIONS - Switched .commit() to .flush()
 # ────────────────────────────────────────────────────────────────────────────
 
 def make_user(role, email, org, password="pass1234"):
@@ -63,8 +60,10 @@ def make_user(role, email, org, password="pass1234"):
         reg_num=""
     )
     _db.session.add(u)
-    _db.session.flush() # Use flush instead of commit to keep it in the transaction
+    # flush() sends the data to DB (getting an ID) without ending the transaction
+    _db.session.flush() 
     return u
+
 
 def make_donation(donor, food_name="Test Food", qty=10, unit="items",
                   category="perishable", deadline="18:00", status="active", notes=""):
@@ -82,6 +81,7 @@ def make_donation(donor, food_name="Test Food", qty=10, unit="items",
     _db.session.flush()
     return d
 
+
 def make_request(donation, charity, message="Need this", status="pending"):
     r = DonationRequest(
         donation_id=donation.id, 
@@ -93,6 +93,7 @@ def make_request(donation, charity, message="Need this", status="pending"):
     donation.status = "pending"
     _db.session.flush()
     return r
+
 
 def make_broadcast(charity, food_name="Rice and Beans", qty=20, unit="items",
                    category="produce", needed_by="18:00", notes="", status="open"):
@@ -110,6 +111,7 @@ def make_broadcast(charity, food_name="Rice and Beans", qty=20, unit="items",
     _db.session.flush()
     return bc
 
+
 def make_broadcast_response(broadcast, donor, message="We can help", status="pending"):
     r = BroadcastResponse(
         broadcast_id=broadcast.id, 
@@ -121,9 +123,11 @@ def make_broadcast_response(broadcast, donor, message="We can help", status="pen
     _db.session.flush()
     return r
 
+
 def login(client, email, password="pass1234"):
     return client.post("/login", data={"email": email, "password": password},
                        follow_redirects=True)
+
 
 # ────────────────────────────────────────────────────────────────────────────
 # FIXTURES
