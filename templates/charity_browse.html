@@ -58,15 +58,13 @@
 {% endblock %}
 
 {% block body %}
-<div id="flash-wrapper">
-  {% with messages = get_flashed_messages() %}
-    {% if messages %}
-      {% for message in messages %}
-        <div class="flash-msg" id="flash-{{ loop.index }}">{{ message }}</div>
-      {% endfor %}
-    {% endif %}
-  {% endwith %}
-</div>
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    {% for message in messages %}
+      <div class="flash-msg">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
 
 <nav class="top-nav">
   <a href="{{ url_for('index') }}" class="logo">Feed<b>Forward</b></a>
