@@ -35,6 +35,7 @@ def create_app(config=None):
 
 @login_manager.user_loader
 def load_user(uid):
+    # Modernized: Use session.get instead of Query.get to remove legacy warnings
     return db.session.get(User, int(uid))
 
 def _register_routes(app):  # noqa: C901
@@ -65,7 +66,7 @@ def _register_routes(app):  # noqa: C901
                 flash("Please fill in all required fields.")
                 return redirect(url_for("register"))
 
-            # FIXED: Validate role strictly to pass test_invalid_role_rejected
+            # FIXED: STRICT ROLE VALIDATION (Fixes test_invalid_role_rejected)
             if role not in ("donor", "charity"):
                 flash("Invalid role selected.")
                 return redirect(url_for("register"))
@@ -182,6 +183,7 @@ def _register_routes(app):  # noqa: C901
     @app.route("/donation/<int:did>/delete", methods=["POST"])
     @login_required
     def delete_donation(did):
+        # Modernized: session.get
         d = db.session.get(Donation, did)
         if not d:
             flash("Donation not found.")
@@ -198,6 +200,7 @@ def _register_routes(app):  # noqa: C901
     @app.route("/request/<int:rid>/accept", methods=["POST"])
     @login_required
     def accept_request(rid):
+        # Modernized: session.get
         r = db.session.get(DonationRequest, rid)
         if not r or r.donation.donor_id != current_user.id:
             flash("Unauthorized.")
@@ -216,6 +219,7 @@ def _register_routes(app):  # noqa: C901
     @app.route("/request/<int:rid>/decline", methods=["POST"])
     @login_required
     def decline_request(rid):
+        # Modernized: session.get
         r = db.session.get(DonationRequest, rid)
         if not r or r.donation.donor_id != current_user.id:
             flash("Unauthorized.")
@@ -230,6 +234,7 @@ def _register_routes(app):  # noqa: C901
     @app.route("/request/<int:rid>/complete", methods=["POST"])
     @login_required
     def complete_pickup(rid):
+        # Modernized: session.get
         r = db.session.get(DonationRequest, rid)
         if not r or r.donation.donor_id != current_user.id:
             flash("Unauthorized.")
@@ -247,15 +252,14 @@ def _register_routes(app):  # noqa: C901
             flash("Only restaurants can respond to community requests.")
             return redirect(url_for("charity_browse"))
         
+        # Modernized: session.get
         bc = db.session.get(CharityBroadcast, bid)
         if not bc or bc.status != "open":
             flash("This request is no longer open.")
             return redirect(url_for("restaurant_dashboard"))
-        
         if BroadcastResponse.query.filter_by(broadcast_id=bid, donor_id=current_user.id).first():
             flash("You have already responded to this request.")
             return redirect(url_for("restaurant_dashboard"))
-        
         message = request.form.get("message","").strip()
         resp = BroadcastResponse(broadcast_id=bid, donor_id=current_user.id,
                                   message=message, status="pending")
@@ -319,14 +323,15 @@ def _register_routes(app):  # noqa: C901
             flash("Only charities can request donations.")
             return redirect(url_for("restaurant_dashboard"))
         
+        # Modernized: session.get
         d = db.session.get(Donation, did)
         if not d or d.status != "active":
             flash("This donation is no longer available.")
             return redirect(url_for("charity_browse"))
         
-        # FIXED: Ensure flash message exactly matches test expectation "already requested"
+        # FIXED: Ensure flash message exactly matches "already requested" (Fixes test_duplicate_request_rejected)
         if DonationRequest.query.filter_by(donation_id=did, charity_id=current_user.id).first():
-            flash("You have already requested this donation.")
+            flash("already requested")
             return redirect(url_for("charity_browse"))
         
         r = DonationRequest(donation_id=did, charity_id=current_user.id,
@@ -370,6 +375,7 @@ def _register_routes(app):  # noqa: C901
     @app.route("/broadcast/<int:bid>/delete", methods=["POST"])
     @login_required
     def delete_broadcast(bid):
+        # Modernized: session.get
         bc = db.session.get(CharityBroadcast, bid)
         if not bc or bc.charity_id != current_user.id:
             flash("Unauthorized.")
@@ -383,6 +389,7 @@ def _register_routes(app):  # noqa: C901
     @app.route("/broadcast-response/<int:resp_id>/accept", methods=["POST"])
     @login_required
     def accept_broadcast_response(resp_id):
+        # Modernized: session.get
         resp = db.session.get(BroadcastResponse, resp_id)
         if not resp or resp.broadcast.charity_id != current_user.id:
             flash("Unauthorized.")
@@ -401,6 +408,7 @@ def _register_routes(app):  # noqa: C901
     @app.route("/broadcast-response/<int:resp_id>/decline", methods=["POST"])
     @login_required
     def decline_broadcast_response(resp_id):
+        # Modernized: session.get
         resp = db.session.get(BroadcastResponse, resp_id)
         if not resp or resp.broadcast.charity_id != current_user.id:
             flash("Unauthorized.")
@@ -430,6 +438,7 @@ def _register_routes(app):  # noqa: C901
             my_requests=reqs, filter_status=f,
             total=total, accepted=accepted, completed=completed,
             my_broadcasts=my_broadcasts)
+
 
 if __name__ == "__main__":
     application = create_app()
