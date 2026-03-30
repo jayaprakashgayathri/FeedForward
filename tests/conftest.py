@@ -1,8 +1,11 @@
 import pytest
+import itertools
 from werkzeug.security import generate_password_hash
 from app import create_app
 from models import db as _db, User, Donation, DonationRequest, CharityBroadcast, BroadcastResponse
 
+# Generator for unique IDs to prevent email collisions
+user_counter = itertools.count(1)
 
 @pytest.fixture(scope="session")
 def app():
@@ -23,16 +26,15 @@ def app():
 @pytest.fixture(scope="function")
 def db(app):
     with app.app_context():
-        # Connect to the database and start a transaction
         connection = _db.engine.connect()
         transaction = connection.begin()
         
-        # Bind the session to this specific connection
+        # Bind the session to the connection for this test
         _db.session.bind = connection
         
         yield _db
         
-        # Roll back everything done during the test
+        # Roll back everything and clean up
         _db.session.remove()
         transaction.rollback()
         connection.close()
@@ -45,12 +47,16 @@ def client(app):
 
 
 # ────────────────────────────────────────────────────────────────────────────
-# HELPER FUNCTIONS - Switched .commit() to .flush()
+# HELPER FUNCTIONS
 # ────────────────────────────────────────────────────────────────────────────
 
 def make_user(role, email, org, password="pass1234"):
+    # Create a unique email for every call to prevent UNIQUE constraint errors
+    unique_id = next(user_counter)
+    unique_email = f"{unique_id}_{email}"
+    
     u = User(
-        email=email, 
+        email=unique_email, 
         password_hash=generate_password_hash(password),
         organization_name=org, 
         role=role,
@@ -60,7 +66,6 @@ def make_user(role, email, org, password="pass1234"):
         reg_num=""
     )
     _db.session.add(u)
-    # flush() sends the data to DB (getting an ID) without ending the transaction
     _db.session.flush() 
     return u
 
