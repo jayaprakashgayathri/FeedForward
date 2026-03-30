@@ -6,7 +6,8 @@ from werkzeug.security import check_password_hash
 
 class TestUserModel:
     def test_fields_stored_correctly(self, donor):
-        assert donor.email == "restaurant@test.com"
+        # Changed to endswith to support unique prefixed emails from conftest.py
+        assert donor.email.endswith("restaurant@test.com")
         assert donor.role  == "donor"
         assert donor.organization_name == "Test Restaurant"
 
@@ -70,7 +71,8 @@ class TestDonationRequestModel:
         d = make_donation(donor)
         r = DonationRequest(donation_id=d.id, charity_id=charity.id)
         _db.session.add(r)
-        _db.session.commit()
+        # Using flush() instead of commit() here is safer with the db fixture
+        _db.session.flush()
         assert r.status == "pending"
 
     def test_time_ago_string(self, donor, charity, db):
