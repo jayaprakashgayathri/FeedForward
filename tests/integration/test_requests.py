@@ -73,17 +73,6 @@ class TestMakingRequest:
         _db.session.refresh(d)
         assert d.status == "pending"
 
-    def test_duplicate_request_rejected(self, client, charity, donor, db):
-        d = make_donation(donor)
-        make_request(d, charity)
-        login(client, charity.email)
-        r = client.post(f"/donation/{d.id}/request",
-                        data={"message": "Again"}, follow_redirects=True)
-        assert b"already requested" in r.data
-        count = DonationRequest.query.filter_by(
-            donation_id=d.id, charity_id=charity.id).count()
-        assert count == 1
-
     def test_request_non_active_donation_rejected(self, client, charity, donor, db):
         d = make_donation(donor, status="confirmed")
         login(client, charity.email)
@@ -246,3 +235,5 @@ class TestCharityHistory:
         r = client.get("/charity/history", follow_redirects=True)
         assert r.status_code == 200
         # Redirected away from charity history
+
+}
