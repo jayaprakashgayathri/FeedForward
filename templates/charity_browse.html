@@ -8,7 +8,7 @@
     position: fixed; top: 90px; left: 50%; transform: translateX(-50%);
     background: var(--theme-dark); color: #fff;
     padding: 12px 28px; border-radius: 50px;
-    font-size: 0.9rem; font-weight: 600; z-index: 5000;
+    font-size: 0.9rem; font-weight: 600; z-index: 6000;
     box-shadow: 0 8px 24px rgba(9,20,19,0.15);
     animation: slideDown 0.4s ease-out;
   }
@@ -58,13 +58,15 @@
 {% endblock %}
 
 {% block body %}
-{% with messages = get_flashed_messages() %}
-  {% if messages %}
-    {% for message in messages %}
-      <div class="flash-msg">{{ message }}</div>
-    {% endfor %}
-  {% endif %}
-{% endwith %}
+<div id="flash-wrapper">
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      {% for message in messages %}
+        <div class="flash-msg" id="flash-{{ loop.index }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+</div>
 
 <nav class="top-nav">
   <a href="{{ url_for('index') }}" class="logo">Feed<b>Forward</b></a>
@@ -179,6 +181,7 @@
 setTimeout(() => {
   const flashes = document.querySelectorAll('.flash-msg');
   flashes.forEach(f => {
+    f.style.transition = 'opacity 0.5s ease';
     f.style.opacity = '0';
     setTimeout(() => f.remove(), 500);
   });
