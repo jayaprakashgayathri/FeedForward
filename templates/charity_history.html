@@ -7,12 +7,9 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='history.css') }}" />
 <style>
   :root {
-    --primary-earth: #285a48;
-    --secondary-sage: #285a48;
-    --bg-alabaster: #f7f7f7;
-    --accent-sand: rgba(9,20,19,0.12);
-    --text-dark: #091413;
-    --white: #ffffff;
+    --primary-earth: #285a48; --secondary-sage: #285a48;
+    --bg-alabaster: #f7f7f7; --accent-sand: rgba(9,20,19,0.12);
+    --text-dark: #091413;    --white: #ffffff;
   }
   .flash-msg {
     position: fixed; top: 90px; left: 50%; transform: translateX(-50%);
@@ -20,23 +17,73 @@
     padding: 12px 28px; border-radius: 50px;
     font-size: 0.9rem; font-weight: 600; z-index: 3000;
   }
-  .stats-row {
-    display: grid; grid-template-columns: repeat(3,1fr); gap:16px; margin-bottom:2rem;
-  }
+  .stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 2rem; }
   .stat-tile {
-    background:#fff; border-radius:16px; padding:1.5rem;
-    border:1px solid var(--accent-sand);
+    background: #fff; border-radius: 16px; padding: 1.5rem;
+    border: 1px solid var(--accent-sand);
     box-shadow: 0 4px 16px rgba(9,20,19,0.05);
   }
   .stat-tile .label {
-    font-size:0.72rem; font-weight:700; text-transform:uppercase;
-    letter-spacing:0.06em; color:var(--primary-earth); margin-bottom:8px;
-    display:flex; align-items:center; gap:6px;
+    font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--primary-earth); margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
   }
-  .stat-tile .value {
-    font-size:2.4rem; font-weight:800; letter-spacing:-0.04em; color:var(--text-dark);
+  .stat-tile .value { font-size: 2.4rem; font-weight: 800; letter-spacing: -0.04em; color: var(--text-dark); }
+
+  /* Section heading */
+  .section-heading {
+    font-size: 1.15rem; font-weight: 800; letter-spacing: -0.02em;
+    margin: 2rem 0 0.8rem; color: var(--text-dark);
+    display: flex; align-items: center; gap: 10px;
   }
-  @media(max-width:768px){ .stats-row{grid-template-columns:1fr;} }
+  .section-heading .sub {
+    font-size: 0.82rem; font-weight: 600; color: rgba(9,20,19,0.45); letter-spacing: 0;
+  }
+
+  /* Broadcasts history cards */
+  .broadcast-history-card {
+    background: #fff; border-radius: 16px; padding: 1.4rem; margin-bottom: 12px;
+    border: 1px solid rgba(9,20,19,0.07);
+    box-shadow: 0 2px 10px rgba(9,20,19,0.04);
+  }
+  .bh-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .bh-name { font-size: 1rem; font-weight: 800; color: var(--text-dark); }
+  .bh-meta { font-size: 0.78rem; color: rgba(9,20,19,0.55); margin-bottom: 8px; }
+  .bh-status {
+    display: inline-block; font-size: 0.68rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.06em; padding: 4px 10px; border-radius: 40px;
+  }
+  .bh-status.open      { background: rgba(40,90,72,0.1); color: #285a48; border: 1px solid rgba(40,90,72,0.2); }
+  .bh-status.fulfilled { background: rgba(9,20,19,0.06); color: rgba(9,20,19,0.5); border: 1px solid rgba(9,20,19,0.08); }
+  .bh-status.closed    { background: rgba(9,20,19,0.06); color: rgba(9,20,19,0.5); border: 1px solid rgba(9,20,19,0.08); }
+
+  /* Offer rows inside broadcast cards */
+  .bh-offers { margin-top: 8px; }
+  .bh-offers-label {
+    font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.05em; color: rgba(9,20,19,0.4); margin-bottom: 8px;
+  }
+  .bh-offer-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 12px; border-radius: 10px; font-size: 0.82rem; margin-bottom: 6px;
+    background: rgba(176,228,204,0.12); border: 1px solid rgba(40,90,72,0.08);
+  }
+  .bh-offer-row.accepted { background: rgba(40,90,72,0.07); }
+  .bh-offer-org { font-weight: 700; }
+  .bh-offer-msg { font-size: 0.75rem; color: rgba(9,20,19,0.5); font-style: italic; margin-top: 2px; }
+  .bh-offer-status {
+    font-size: 0.68rem; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 0.05em; padding: 3px 10px; border-radius: 40px; white-space: nowrap;
+  }
+  .bh-offer-status.accepted { background: rgba(40,90,72,0.15); color: #285a48; border: 1px solid rgba(40,90,72,0.2); }
+  .bh-offer-status.pending  { background: rgba(245,158,11,0.1); color: #b45309; border: 1px solid rgba(245,158,11,0.2); }
+  .bh-offer-status.declined { background: rgba(9,20,19,0.06); color: rgba(9,20,19,0.4); border: 1px solid rgba(9,20,19,0.08); }
+
+  @media(max-width:768px) {
+    .stats-row { grid-template-columns: 1fr; }
+    .history-card { overflow-x: auto; }
+    .history-table { min-width: 700px; }
+  }
 </style>
 {% endblock %}
 
@@ -58,7 +105,7 @@
 <div class="history-page-container">
   <header class="history-page-header">
     <h1>Request History</h1>
-    <p>{{ current_user.organization_name }} · All food requests your organization has made.</p>
+    <p>{{ current_user.organization_name }} · Complete record of your donation requests and food broadcasts.</p>
   </header>
 
   <!-- Stats -->
@@ -77,7 +124,12 @@
     </div>
   </div>
 
-  <!-- Filters -->
+  <!-- ══ SECTION 1: Donation requests (charity requested a restaurant's listing) ══ -->
+  <div class="section-heading">
+    Donation Requests
+    <span class="sub">(you requested restaurant listings)</span>
+  </div>
+
   <div class="filter-bar">
     <a href="{{ url_for('charity_history') }}"
        class="filter-btn {% if filter_status=='all' %}active{% endif %}"
@@ -115,13 +167,20 @@
           <td>{{ r.created_at.strftime('%b %d, %Y') }}</td>
           <td>
             <strong>{{ r.donation.food_name }}</strong>
-            {% if r.message %}<div style="font-size:0.75rem;color:rgba(9,20,19,0.55);margin-top:2px;font-style:italic;">"{{ r.message[:60] }}"</div>{% endif %}
+            {% if r.message %}
+            <div style="font-size:0.75rem;color:rgba(9,20,19,0.55);margin-top:2px;font-style:italic;">
+              "{{ r.message[:60] }}"
+            </div>
+            {% endif %}
           </td>
           <td>{{ r.donation.donor.organization_name }}</td>
           <td>{{ r.donation.quantity }} {{ r.donation.unit }}</td>
           <td>{{ r.donation.pickup_deadline }}</td>
           <td>
-            <span class="status-pill {% if r.status=='completed' or r.status=='accepted' %}completed{% elif r.status=='declined' %}pending{% else %}pending{% endif %}">
+            <span class="status-pill
+              {% if r.status in ['completed','accepted'] %}completed
+              {% elif r.status == 'declined' %}pending
+              {% else %}pending{% endif %}">
               {{ r.status | capitalize }}
             </span>
           </td>
@@ -132,7 +191,7 @@
     {% else %}
     <div style="text-align:center;padding:4rem 2rem;color:rgba(9,20,19,0.4);">
       <i class="fa-solid fa-inbox" style="font-size:2rem;display:block;margin-bottom:1rem;"></i>
-      No requests yet.
+      No donation requests yet.
       <a href="{{ url_for('charity_browse') }}"
          style="display:block;margin-top:12px;color:var(--primary-earth);font-weight:600;font-size:0.9rem;">
         Browse donations →
@@ -140,5 +199,68 @@
     </div>
     {% endif %}
   </div>
+
+  <!-- ══ SECTION 2: My Food Requests (broadcasts) + restaurant offers ══ -->
+  <div class="section-heading" style="margin-top:2.5rem;">
+    My Food Requests
+    <span class="sub">(broadcasts you posted — restaurants respond here)</span>
+  </div>
+
+  {% if my_broadcasts %}
+    {% for bc in my_broadcasts %}
+    <div class="broadcast-history-card">
+      <div class="bh-top">
+        <div>
+          <div class="bh-name">{{ bc.food_name }}</div>
+          <div class="bh-meta">
+            {{ bc.quantity }} {{ bc.unit }} &middot; {{ bc.category_label }}
+            &middot; Needed by {{ bc.needed_by }}
+            &middot; Posted {{ bc.time_ago }}
+          </div>
+          {% if bc.notes %}
+          <div style="font-size:0.78rem;font-style:italic;color:rgba(9,20,19,0.5);margin-top:2px;">
+            "{{ bc.notes[:100] }}"
+          </div>
+          {% endif %}
+        </div>
+        <span class="bh-status {{ bc.status }}">{{ bc.status | capitalize }}</span>
+      </div>
+
+      {% if bc.responses %}
+      <div class="bh-offers">
+        <div class="bh-offers-label">
+          Restaurant Offers ({{ bc.responses | length }})
+        </div>
+        {% for resp in bc.responses %}
+        <div class="bh-offer-row {% if resp.status == 'accepted' %}accepted{% endif %}">
+          <div>
+            <div class="bh-offer-org">{{ resp.restaurant_user.organization_name }}</div>
+            {% if resp.message %}
+            <div class="bh-offer-msg">"{{ resp.message[:60] }}"</div>
+            {% endif %}
+          </div>
+          <span class="bh-offer-status {{ resp.status }}">{{ resp.status | capitalize }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div style="font-size:0.78rem;color:rgba(9,20,19,0.38);padding:0.3rem 0;">
+        No restaurant offers yet — they'll appear here when restaurants respond.
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  {% else %}
+    <div style="background:#fff;border-radius:16px;padding:2.5rem;text-align:center;
+                color:rgba(9,20,19,0.4);border:1px solid rgba(9,20,19,0.07);">
+      <i class="fa-regular fa-paper-plane" style="font-size:2rem;display:block;margin-bottom:1rem;opacity:0.3;"></i>
+      No food requests posted yet.
+      <a href="{{ url_for('charity_browse') }}"
+         style="display:block;margin-top:12px;color:var(--primary-earth);font-weight:600;font-size:0.9rem;">
+        Post a request →
+      </a>
+    </div>
+  {% endif %}
+
 </div>
 {% endblock %}
