@@ -32,7 +32,7 @@ class TestCharityBrowse:
         assert b"Aloo Gobi" not in r.data
 
     def test_category_filter_produce(self, client, charity, donor, db):
-        # FIXED: Updated 'category' to 'food_category' to match the database model
+        # FIXED: Updated 'category' to 'food_category' to match the database model and conftest helper
         make_donation(donor, food_name="Beans",  food_category="non-perishable")
         make_donation(donor, food_name="Greens", food_category="produce")
         login(client, charity.email)
@@ -41,7 +41,7 @@ class TestCharityBrowse:
         assert b"Beans" not in r.data
 
     def test_category_filter_perishable(self, client, charity, donor, db):
-        # FIXED: Updated 'category' to 'food_category' to match the database model
+        # FIXED: Updated 'category' to 'food_category' to match the database model and conftest helper
         make_donation(donor, food_name="Hot Curry",   food_category="perishable")
         make_donation(donor, food_name="Rice Sacks",  food_category="produce")
         login(client, charity.email)
@@ -62,7 +62,8 @@ class TestMakingRequest:
         r = client.post(f"/donation/{d.id}/request",
                         data={"message": "We need this"}, follow_redirects=True)
         assert r.status_code == 200
-        req = DonationRequest.query.filter_by(
+        # Modernized query syntax
+        req = db.session.query(DonationRequest).filter_by(
             donation_id=d.id, charity_id=charity.id).first()
         assert req is not None
         assert req.status == "pending"
@@ -72,7 +73,7 @@ class TestMakingRequest:
         login(client, charity.email)
         client.post(f"/donation/{d.id}/request",
                     data={"message": ""}, follow_redirects=True)
-        _db.session.refresh(d)
+        db.session.refresh(d)
         assert d.status == "pending"
 
     def test_request_non_active_donation_rejected(self, client, charity, donor, db):
@@ -94,7 +95,7 @@ class TestMakingRequest:
         make_request(d, charity)
         # Reset to active so it shows in browse
         d.status = "active"
-        _db.session.commit()
+        db.session.commit()
         login(client, charity.email)
         r = client.get("/charity-browse")
         assert b"Request Sent" in r.data or b"already" in r.data.lower()
@@ -107,7 +108,7 @@ class TestAcceptRequest:
         login(client, donor.email)
         r = client.post(f"/request/{req.id}/accept", follow_redirects=True)
         assert r.status_code == 200
-        _db.session.refresh(req)
+        db.session.refresh(req)
         assert req.status == "accepted"
 
     def test_accept_sets_donation_confirmed(self, client, donor, charity, db):
@@ -115,7 +116,7 @@ class TestAcceptRequest:
         req = make_request(d, charity)
         login(client, donor.email)
         client.post(f"/request/{req.id}/accept", follow_redirects=True)
-        _db.session.refresh(d)
+        db.session.refresh(d)
         assert d.status == "confirmed"
 
     def test_accept_declines_competing_requests(self, client, donor, charity, charity2, db):
@@ -123,10 +124,10 @@ class TestAcceptRequest:
         req1 = make_request(d, charity,  "First")
         req2 = make_request(d, charity2, "Second")
         d.status = "pending"
-        _db.session.commit()
+        db.session.commit()
         login(client, donor.email)
         client.post(f"/request/{req1.id}/accept", follow_redirects=True)
-        _db.session.refresh(req2)
+        db.session.refresh(req2)
         assert req2.status == "declined"
 
     def test_other_restaurant_cannot_accept(self, client, donor, donor2, charity, db):
@@ -135,7 +136,7 @@ class TestAcceptRequest:
         login(client, donor2.email)
         r = client.post(f"/request/{req.id}/accept", follow_redirects=True)
         assert b"Unauthorized" in r.data
-        _db.session.refresh(req)
+        db.session.refresh(req)
         assert req.status == "pending"
 
     def test_flash_message_on_accept(self, client, donor, charity, db):
@@ -152,7 +153,7 @@ class TestDeclineRequest:
         req = make_request(d, charity)
         login(client, donor.email)
         client.post(f"/request/{req.id}/decline", follow_redirects=True)
-        _db.session.refresh(req)
+        db.session.refresh(req)
         assert req.status == "declined"
 
     def test_decline_resets_donation_to_active(self, client, donor, charity, db):
@@ -160,7 +161,7 @@ class TestDeclineRequest:
         req = make_request(d, charity)
         login(client, donor.email)
         client.post(f"/request/{req.id}/decline", follow_redirects=True)
-        _db.session.refresh(d)
+        db.session.refresh(d)
         assert d.status == "active"
 
     def test_other_restaurant_cannot_decline(self, client, donor, donor2, charity, db):
@@ -177,11 +178,11 @@ class TestCompletePickup:
         req          = make_request(d, charity)
         req.status   = "accepted"
         d.status     = "confirmed"
-        _db.session.commit()
+        db.session.commit()
         login(client, donor.email)
         client.post(f"/request/{req.id}/complete", follow_redirects=True)
-        _db.session.refresh(req)
-        _db.session.refresh(d)
+        db.session.refresh(req)
+        db.session.refresh(d)
         assert req.status == "completed"
         assert d.status   == "completed"
 
@@ -190,7 +191,7 @@ class TestCompletePickup:
         req          = make_request(d, charity)
         req.status   = "accepted"
         d.status     = "confirmed"
-        _db.session.commit()
+        db.session.commit()
         login(client, donor2.email)
         r = client.post(f"/request/{req.id}/complete", follow_redirects=True)
         assert b"Unauthorized" in r.data
@@ -216,18 +217,20 @@ class TestCharityHistory:
         d2   = make_donation(donor, food_name="PendingRoti")
         req1 = make_request(d1, charity)
         req1.status = "accepted"
-        _db.session.commit()
+        db.session.commit()
         make_request(d2, charity)
         login(client, charity.email)
         r = client.get("/charity/history?filter=accepted")
         assert b"AcceptedCurry" in r.data
+        # Note: PendingRoti will not be in history if history only shows CONFIRMED items,
+        # but usually it filters by request status.
         assert b"PendingRoti" not in r.data
 
     def test_history_filter_declined(self, client, charity, donor, db):
         d    = make_donation(donor, food_name="DeclinedFood")
         req  = make_request(d, charity)
         req.status = "declined"
-        _db.session.commit()
+        db.session.commit()
         login(client, charity.email)
         r = client.get("/charity/history?filter=declined")
         assert b"DeclinedFood" in r.data
