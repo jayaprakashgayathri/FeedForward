@@ -35,6 +35,7 @@ def create_app(config=None):
 
 @login_manager.user_loader
 def load_user(uid):
+    # Modernized: Use session.get to remove legacy Query.get warnings
     return db.session.get(User, int(uid))
 
 def _register_routes(app):  # noqa: C901
@@ -298,8 +299,8 @@ def _register_routes(app):  # noqa: C901
         # Start with active listings
         q = Donation.query.filter_by(status="active")
         
-        # CRITICAL FIX: Actually apply the category filter to the query
-        if category != "all":
+        # FIX: Apply the category filter to the SQLAlchemy query
+        if category and category != "all":
             q = q.filter_by(food_category=category)
             
         if search:
