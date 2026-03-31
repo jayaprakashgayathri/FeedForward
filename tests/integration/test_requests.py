@@ -32,16 +32,18 @@ class TestCharityBrowse:
         assert b"Aloo Gobi" not in r.data
 
     def test_category_filter_produce(self, client, charity, donor, db):
-        make_donation(donor, food_name="Beans",  category="non-perishable")
-        make_donation(donor, food_name="Greens", category="produce")
+        # FIXED: Updated 'category' to 'food_category' to match the database model
+        make_donation(donor, food_name="Beans",  food_category="non-perishable")
+        make_donation(donor, food_name="Greens", food_category="produce")
         login(client, charity.email)
         r = client.get("/charity-browse?category=produce")
         assert b"Greens" in r.data
         assert b"Beans" not in r.data
 
     def test_category_filter_perishable(self, client, charity, donor, db):
-        make_donation(donor, food_name="Hot Curry",   category="perishable")
-        make_donation(donor, food_name="Rice Sacks",  category="produce")
+        # FIXED: Updated 'category' to 'food_category' to match the database model
+        make_donation(donor, food_name="Hot Curry",   food_category="perishable")
+        make_donation(donor, food_name="Rice Sacks",  food_category="produce")
         login(client, charity.email)
         r = client.get("/charity-browse?category=perishable")
         assert b"Hot Curry" in r.data
