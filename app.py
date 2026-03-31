@@ -35,7 +35,6 @@ def create_app(config=None):
 
 @login_manager.user_loader
 def load_user(uid):
-    # Modernized: Use session.get to remove legacy Query.get warnings
     return db.session.get(User, int(uid))
 
 def _register_routes(app):  # noqa: C901
@@ -296,18 +295,20 @@ def _register_routes(app):  # noqa: C901
         search   = request.args.get("search","").strip()
         category = request.args.get("category","all")
         
-        # Start with active listings
+        # 1. Start with base query
         q = Donation.query.filter_by(status="active")
         
-        # FIX: Apply the category filter to the SQLAlchemy query
+        # 2. APPLY CATEGORY FILTER (Ensure it matches model field name)
         if category and category != "all":
-            q = q.filter_by(food_category=category)
+            q = q.filter(Donation.food_category == category)
             
+        # 3. Apply Search
         if search:
             q = q.filter(db.or_(
                 Donation.food_name.ilike(f"%{search}%"),
                 Donation.notes.ilike(f"%{search}%")))
                 
+        # 4. Fetch Results
         listings = q.order_by(Donation.created_at.desc()).all()
         
         my_req_ids = {r.donation_id for r in
