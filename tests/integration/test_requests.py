@@ -32,7 +32,7 @@ class TestCharityBrowse:
         assert b"Aloo Gobi" not in r.data
 
     def test_category_filter_produce(self, client, charity, donor, db):
-        # FIXED: Updated 'category' to 'food_category' to match the database model and conftest helper
+        # FIXED: Updated 'category' to 'food_category' to match the database model
         make_donation(donor, food_name="Beans",  food_category="non-perishable")
         make_donation(donor, food_name="Greens", food_category="produce")
         login(client, charity.email)
@@ -41,7 +41,7 @@ class TestCharityBrowse:
         assert b"Beans" not in r.data
 
     def test_category_filter_perishable(self, client, charity, donor, db):
-        # FIXED: Updated 'category' to 'food_category' to match the database model and conftest helper
+        # FIXED: Updated 'category' to 'food_category' to match the database model
         make_donation(donor, food_name="Hot Curry",   food_category="perishable")
         make_donation(donor, food_name="Rice Sacks",  food_category="produce")
         login(client, charity.email)
@@ -222,8 +222,6 @@ class TestCharityHistory:
         login(client, charity.email)
         r = client.get("/charity/history?filter=accepted")
         assert b"AcceptedCurry" in r.data
-        # Note: PendingRoti will not be in history if history only shows CONFIRMED items,
-        # but usually it filters by request status.
         assert b"PendingRoti" not in r.data
 
     def test_history_filter_declined(self, client, charity, donor, db):
@@ -239,4 +237,3 @@ class TestCharityHistory:
         login(client, donor.email)
         r = client.get("/charity/history", follow_redirects=True)
         assert r.status_code == 200
-        # Redirected away from charity history
