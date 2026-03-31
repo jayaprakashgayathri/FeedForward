@@ -299,7 +299,7 @@ def _register_routes(app):  # noqa: C901
         # Start with active listings
         q = Donation.query.filter_by(status="active")
         
-        # FIXED: Correctly apply the category filter from the URL parameters
+        # FIXED: Correctly apply the category filter to the SQLAlchemy query
         if category != "all":
             q = q.filter_by(food_category=category)
             
@@ -333,7 +333,7 @@ def _register_routes(app):  # noqa: C901
             flash("This donation is no longer available.")
             return redirect(url_for("charity_browse"))
         
-        # FIXED: Flash message matches integration test expectation
+        # FIXED: Ensure flash message exactly matches test expectation "already requested"
         if DonationRequest.query.filter_by(donation_id=did, charity_id=current_user.id).first():
             flash("already requested")
             return redirect(url_for("charity_browse"))
