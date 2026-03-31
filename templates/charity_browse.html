@@ -14,17 +14,13 @@
   }
   @keyframes slideDown {
     from { transform: translate(-50%, -20px); opacity: 0; }
-    to { transform: translate(-50%, 0); opacity: 1; }
+    to   { transform: translate(-50%, 0); opacity: 1; }
   }
   .modal-overlay {
-    position: fixed; inset: 0;
-    background: rgba(9,20,19,0.55);
-    backdrop-filter: blur(4px);
-    z-index: 4000;
-    display: flex; align-items: center; justify-content: center;
-    padding: 2rem;
-    opacity: 0; pointer-events: none;
-    transition: opacity 0.25s ease;
+    position: fixed; inset: 0; background: rgba(9,20,19,0.55);
+    backdrop-filter: blur(4px); z-index: 4000;
+    display: flex; align-items: center; justify-content: center; padding: 2rem;
+    opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
   }
   .modal-overlay.open { opacity: 1; pointer-events: all; }
   .modal-box {
@@ -34,7 +30,7 @@
     transform: translateY(20px); transition: transform 0.25s ease;
   }
   .modal-overlay.open .modal-box { transform: translateY(0); }
-  .modal-box h3 { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.4rem; }
+  .modal-box h3 { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.4rem; letter-spacing: -0.02em; }
   .modal-box p  { font-size: 0.88rem; color: rgba(9,20,19,0.6); margin-bottom: 1.5rem; }
   .modal-food-tag {
     background: rgba(176,228,204,0.4); border: 1px solid rgba(40,90,72,0.2);
@@ -46,14 +42,56 @@
   .filter-chip {
     padding: 7px 18px; border-radius: 40px; border: 1.5px solid rgba(9,20,19,0.12);
     background: rgba(255,255,255,0.6); font-size: 0.75rem; font-weight: 700;
-    text-transform: uppercase; color: rgba(9,20,19,0.6); text-decoration: none;
+    text-transform: uppercase; letter-spacing: 0.05em; color: rgba(9,20,19,0.6);
+    text-decoration: none; transition: all 0.2s;
   }
+  .filter-chip:hover { border-color: var(--theme-primary); color: var(--theme-primary); }
   .filter-chip.active { background: var(--theme-primary); color: #fff; border-color: var(--theme-primary); }
   .already-requested {
     background: rgba(176,228,204,0.35); color: var(--theme-primary);
     border: 1px solid rgba(40,90,72,0.2); font-size: 0.78rem; font-weight: 700;
-    padding: 10px; border-radius: 50px; text-align: center; width: 100%;
+    padding: 10px; border-radius: 50px; text-align: center; width: 100%; display: block;
   }
+
+  /* ── Sidebar broadcast form ── */
+  .sidebar-section-title { font-size: 1.05rem; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 0.3rem; color: var(--theme-dark); }
+  .sidebar-section-sub { font-size: 0.82rem; color: rgba(9,20,19,0.6); margin-bottom: 1.2rem; line-height: 1.5; }
+  .sidebar-divider { height: 1px; background: rgba(9,20,19,0.07); margin: 1.5rem 0; }
+  .sb-form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 1rem; }
+  .sb-form-group label { font-size: 0.82rem; font-weight: 700; color: var(--theme-dark); }
+  .sb-input-wrap {
+    background: #fff; border: 1.5px solid rgba(9,20,19,0.08); border-radius: 12px;
+    display: flex; align-items: center; overflow: hidden; transition: all 0.25s ease;
+  }
+  .sb-input-wrap:focus-within { border-color: var(--theme-dark); box-shadow: 0 0 0 3px rgba(9,20,19,0.05); }
+  .sb-input-wrap input, .sb-input-wrap select, .sb-input-wrap textarea {
+    width: 100%; border: none; background: transparent; padding: 11px 13px;
+    font-family: Inter, sans-serif; font-size: 0.88rem; color: var(--theme-dark); outline: none;
+  }
+  .sb-input-wrap textarea { resize: vertical; min-height: 80px; }
+  .sb-input-wrap select  { cursor: pointer; appearance: none; }
+  .sb-unit { padding-right: 12px; font-weight: 700; color: var(--theme-primary); font-size: 0.82rem; flex-shrink: 0; }
+  .sb-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* ── My Broadcasts list ── */
+  .broadcast-item {
+    background: #fff; border: 1px solid rgba(9,20,19,0.07); border-radius: 16px;
+    padding: 1rem; margin-bottom: 10px; transition: box-shadow 0.2s;
+  }
+  .broadcast-item:hover { box-shadow: 0 4px 14px rgba(9,20,19,0.07); }
+  .broadcast-item-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+  .broadcast-item-name { font-size: 0.92rem; font-weight: 800; color: var(--theme-dark); }
+  .broadcast-item-meta { font-size: 0.75rem; color: rgba(9,20,19,0.55); margin-bottom: 8px; }
+  .bc-status-pill { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; padding: 4px 10px; border-radius: 40px; white-space: nowrap; }
+  .bc-status-open      { background: rgba(40,90,72,0.1); color: var(--theme-primary); border: 1px solid rgba(40,90,72,0.2); }
+  .bc-status-fulfilled { background: rgba(9,20,19,0.06); color: rgba(9,20,19,0.5); border: 1px solid rgba(9,20,19,0.08); }
+  .offer-card { background: rgba(176,228,204,0.15); border: 1px solid rgba(40,90,72,0.12); border-radius: 12px; padding: 0.9rem; margin-bottom: 8px; }
+  .offer-card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .offer-org  { font-size: 0.85rem; font-weight: 700; }
+  .offer-time { font-size: 0.72rem; color: rgba(9,20,19,0.45); }
+  .offer-msg  { font-size: 0.8rem; font-style: italic; color: rgba(9,20,19,0.65); background: rgba(255,255,255,0.7); padding: 8px 10px; border-radius: 8px; border-left: 3px solid var(--theme-primary); margin-bottom: 10px; line-height: 1.5; }
+  .offer-actions { display: flex; gap: 8px; }
+  .offer-accepted-tag { font-size: 0.75rem; font-weight: 700; color: var(--theme-primary); background: rgba(40,90,72,0.1); padding: 6px 14px; border-radius: 40px; border: 1px solid rgba(40,90,72,0.2); }
 </style>
 {% endblock %}
 
@@ -78,24 +116,36 @@
 </nav>
 
 <main class="charity-layout">
+
+  <!-- ══ LEFT: Browse restaurant listings ══ -->
   <div class="browse-content">
     <header class="browse-header">
       <h1>Find Food for Your Community.</h1>
       <p>Browse active surplus listings from local restaurants and claim them instantly.</p>
+
       <div class="search-section">
-        <form method="GET" action="{{ url_for('charity_browse') }}" style="display:flex;gap:10px;align-items:center;width:100%;max-width:650px;">
+        <form method="GET" action="{{ url_for('charity_browse') }}"
+              style="display:flex;gap:10px;align-items:center;width:100%;max-width:650px;">
           <div class="search-box" style="flex:1;">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" name="search" placeholder="Search by food item or restaurant name..." value="{{ search }}" id="search-input" />
+            <input type="text" name="search"
+                   placeholder="Search by food item or restaurant name..."
+                   value="{{ search }}" id="search-input" />
           </div>
-          <button type="submit" class="btn-primary btn-sm" style="white-space:nowrap;border-radius:50px;padding:12px 20px;">Search</button>
+          <button type="submit" class="btn-primary btn-sm"
+                  style="white-space:nowrap;border-radius:50px;padding:12px 20px;">Search</button>
         </form>
       </div>
+
       <div class="filter-chips" style="margin-top:1rem;">
-        <a href="{{ url_for('charity_browse', search=search) }}" class="filter-chip {% if category=='all' %}active{% endif %}">All</a>
-        <a href="{{ url_for('charity_browse', category='perishable', search=search) }}" class="filter-chip {% if category=='perishable' %}active{% endif %}">Perishable</a>
-        <a href="{{ url_for('charity_browse', category='produce', search=search) }}" class="filter-chip {% if category=='produce' %}active{% endif %}">Produce</a>
-        <a href="{{ url_for('charity_browse', category='non-perishable', search=search) }}" class="filter-chip {% if category=='non-perishable' %}active{% endif %}">Non-Perishable</a>
+        <a href="{{ url_for('charity_browse', search=search) }}"
+           class="filter-chip {% if category=='all' %}active{% endif %}">All</a>
+        <a href="{{ url_for('charity_browse', category='perishable', search=search) }}"
+           class="filter-chip {% if category=='perishable' %}active{% endif %}">Perishable</a>
+        <a href="{{ url_for('charity_browse', category='produce', search=search) }}"
+           class="filter-chip {% if category=='produce' %}active{% endif %}">Produce</a>
+        <a href="{{ url_for('charity_browse', category='non-perishable', search=search) }}"
+           class="filter-chip {% if category=='non-perishable' %}active{% endif %}">Non-Perishable</a>
       </div>
     </header>
 
@@ -117,7 +167,7 @@
           <p style="font-size:0.78rem;color:rgba(9,20,19,0.55);font-style:italic;margin-bottom:14px;">{{ d.notes }}</p>
           {% endif %}
           {% if d.id in my_req_ids %}
-            <div class="already-requested"><i class="fa-solid fa-check"></i> Request Sent</div>
+            <span class="already-requested"><i class="fa-solid fa-check"></i> Request Sent</span>
           {% else %}
             <button class="btn-primary btn-sm full-width" id="request-btn-{{ d.id }}"
                     onclick="openModal({{ d.id }}, '{{ d.food_name|e }}', '{{ d.quantity }} {{ d.unit }}', '{{ d.donor.organization_name|e }}')">
@@ -135,23 +185,181 @@
     </section>
   </div>
 
+  <!-- ══ RIGHT SIDEBAR ══ -->
   <aside class="request-sidebar">
-    <h2>Your Dashboard</h2>
-    <p>Click "Request Donation" on any listing to send a request to the restaurant.</p>
-    <div style="background:rgba(176,228,204,0.25);border:1px solid rgba(40,90,72,0.15);border-radius:16px;padding:1.2rem;margin-bottom:1.5rem;">
-      <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;color:var(--theme-primary);margin-bottom:8px;">How it works</div>
-      <ul style="font-size:0.85rem;line-height:1.7;list-style:none;padding:0;">
-        <li>🟢 Browse active listings</li>
-        <li>📩 Click "Request Donation"</li>
-        <li>✅ Pick up your donation</li>
-      </ul>
+
+    <!-- ── SECTION 1: Post a Food Request form ── -->
+    <div class="sidebar-section-title">Post a Food Request</div>
+    <p class="sidebar-section-sub">
+      Tell all restaurants exactly what your community needs.
+      They'll see your request and can offer to fulfil it directly.
+    </p>
+
+    <form action="{{ url_for('new_broadcast') }}" method="POST" id="broadcast-form">
+      <div class="sb-form-group">
+        <label>What do you need? *</label>
+        <div class="sb-input-wrap">
+          <input type="text" name="food_name" id="bc-food-name"
+                 placeholder="e.g. Cooked Rice, Canned Beans, Fresh Vegetables..."
+                 required />
+        </div>
+      </div>
+
+      <div class="sb-form-group">
+        <label>Category *</label>
+        <div class="sb-input-wrap">
+          <select name="food_category" id="bc-cat" onchange="updateBcUnit()" required>
+            <option value="perishable">Perishable (Cooked Meals)</option>
+            <option value="produce">Produce (Grains / Vegetables)</option>
+            <option value="non-perishable">Non-Perishable (Canned)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="sb-row-2">
+        <div class="sb-form-group">
+          <label id="bc-qty-label">Quantity *</label>
+          <div class="sb-input-wrap">
+            <input type="number" name="quantity" id="bc-qty" placeholder="0" min="1" required />
+            <span class="sb-unit" id="bc-unit">items</span>
+            <input type="hidden" name="unit" id="bc-unit-hidden" value="items" />
+          </div>
+        </div>
+        <div class="sb-form-group">
+          <label>Needed By *</label>
+          <div class="sb-input-wrap">
+            <input type="time" name="needed_by" required />
+          </div>
+        </div>
+      </div>
+
+      <div class="sb-form-group">
+        <label>Message to Restaurants</label>
+        <div class="sb-input-wrap">
+          <textarea name="notes"
+                    placeholder="e.g. We serve 60 residents nightly. Can pick up by 7pm. No pork please."></textarea>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-primary full-width" id="broadcast-submit-btn">
+        <i class="fa-solid fa-paper-plane" style="margin-right:8px;"></i>Broadcast Request
+      </button>
+    </form>
+
+    <div class="sidebar-divider"></div>
+
+    <!-- ── SECTION 2: My Food Requests + restaurant offers ── -->
+    <div class="sidebar-section-title" style="display:flex;align-items:center;gap:8px;margin-bottom:0.8rem;">
+      My Food Requests
+      {% if my_broadcasts %}
+        <span style="font-size:0.68rem;font-weight:800;text-transform:uppercase;
+                     letter-spacing:0.06em;background:rgba(9,20,19,0.07);
+                     padding:3px 10px;border-radius:40px;">{{ my_broadcasts | length }}</span>
+      {% endif %}
     </div>
-    <a href="{{ url_for('charity_history') }}" class="btn-primary full-width" style="text-decoration:none;display:flex;align-items:center;justify-content:center;gap:10px;padding:1.2rem;">
-      <i class="fa-solid fa-clock-rotate-left"></i> View Request History
+
+    {% if my_broadcasts %}
+      {% for bc in my_broadcasts %}
+      <div class="broadcast-item" id="broadcast-{{ bc.id }}">
+        <div class="broadcast-item-top">
+          <div style="flex:1;min-width:0;">
+            <div class="broadcast-item-name">{{ bc.food_name }}</div>
+            <div class="broadcast-item-meta">
+              {{ bc.quantity }} {{ bc.unit }} &middot; {{ bc.category_label }}
+              &middot; Needed by {{ bc.needed_by }} &middot; {{ bc.time_ago }}
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;margin-left:8px;">
+            <span class="bc-status-pill {% if bc.status=='open' %}bc-status-open{% else %}bc-status-fulfilled{% endif %}">
+              {{ bc.status | capitalize }}
+            </span>
+            {% if bc.status == 'open' %}
+            <form method="POST" action="{{ url_for('delete_broadcast', bid=bc.id) }}"
+                  onsubmit="return confirm('Remove this food request?');" style="margin:0;">
+              <button type="submit"
+                      style="background:transparent;border:none;cursor:pointer;font-size:0.75rem;color:rgba(9,20,19,0.35);padding:0;">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+
+        {% if bc.notes %}
+        <div style="font-size:0.75rem;font-style:italic;color:rgba(9,20,19,0.5);margin-bottom:10px;">"{{ bc.notes[:80] }}"</div>
+        {% endif %}
+
+        {% set pending_offers = bc.responses | selectattr('status','eq','pending') | list %}
+        {% set accepted_offer = bc.responses | selectattr('status','eq','accepted') | list | first %}
+
+        {% if accepted_offer %}
+          <div class="offer-card" style="background:rgba(176,228,204,0.25);">
+            <div class="offer-card-top">
+              <span class="offer-org">
+                <i class="fa-solid fa-check-circle" style="color:var(--theme-primary);margin-right:5px;"></i>
+                {{ accepted_offer.restaurant_user.organization_name }}
+              </span>
+              <span class="offer-accepted-tag">Accepted</span>
+            </div>
+            {% if accepted_offer.message %}
+            <div class="offer-msg">"{{ accepted_offer.message }}"</div>
+            {% endif %}
+          </div>
+
+        {% elif pending_offers %}
+          <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:rgba(9,20,19,0.4);margin-bottom:8px;">
+            {{ pending_offers | length }} offer{% if pending_offers | length > 1 %}s{% endif %} from restaurants
+          </div>
+          {% for offer in pending_offers %}
+          <div class="offer-card" id="offer-{{ offer.id }}">
+            <div class="offer-card-top">
+              <span class="offer-org">{{ offer.restaurant_user.organization_name }}</span>
+              <span class="offer-time">{{ offer.time_ago }}</span>
+            </div>
+            {% if offer.message %}
+            <div class="offer-msg">"{{ offer.message }}"</div>
+            {% endif %}
+            <div class="offer-actions">
+              <form method="POST" action="{{ url_for('accept_broadcast_response', resp_id=offer.id) }}" style="flex:1;">
+                <button type="submit" class="btn-primary btn-sm full-width">
+                  <i class="fa-solid fa-check"></i> Accept Offer
+                </button>
+              </form>
+              <form method="POST" action="{{ url_for('decline_broadcast_response', resp_id=offer.id) }}" style="flex:1;">
+                <button type="submit" class="btn-primary btn-sm full-width"
+                        style="background:transparent;color:var(--theme-dark);border:1.5px solid rgba(9,20,19,0.15);box-shadow:none;">
+                  Decline
+                </button>
+              </form>
+            </div>
+          </div>
+          {% endfor %}
+
+        {% else %}
+          <div style="font-size:0.78rem;color:rgba(9,20,19,0.38);text-align:center;padding:0.4rem 0;">
+            <i class="fa-regular fa-clock" style="margin-right:5px;"></i>Waiting for restaurant offers...
+          </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+
+    {% else %}
+      <div style="text-align:center;padding:1.5rem 1rem;color:rgba(9,20,19,0.35);font-size:0.85rem;">
+        <i class="fa-regular fa-paper-plane" style="display:block;font-size:1.5rem;margin-bottom:0.5rem;opacity:0.4;"></i>
+        No food requests posted yet. Use the form above to tell restaurants what you need.
+      </div>
+    {% endif %}
+
+    <div class="sidebar-divider"></div>
+    <a href="{{ url_for('charity_history') }}" class="btn-primary full-width"
+       style="text-decoration:none;display:flex;align-items:center;justify-content:center;gap:10px;padding:1.2rem;">
+      <i class="fa-solid fa-clock-rotate-left"></i> View Full History
     </a>
+
   </aside>
 </main>
 
+<!-- ══ REQUEST DONATION MODAL ══ -->
 <div class="modal-overlay" id="req-modal">
   <div class="modal-box">
     <h3>Request Donation</h3>
@@ -161,12 +369,19 @@
       <div class="form-group">
         <label style="font-size:0.85rem;font-weight:700;display:block;margin-bottom:8px;">Message to Restaurant (optional)</label>
         <div class="input-wrap">
-          <textarea name="message" id="modal-message" placeholder="e.g. We serve 50 residents nightly..." style="min-height:90px;"></textarea>
+          <textarea name="message" id="modal-message"
+                    placeholder="e.g. We serve 50 residents nightly and can pick up by 7pm..."
+                    style="min-height:90px;"></textarea>
         </div>
       </div>
       <div class="modal-actions">
-        <button type="submit" class="btn-primary" style="flex:1;" id="modal-submit-btn">Send Request</button>
-        <button type="button" class="btn-primary" onclick="closeModal()" style="flex:1;background:transparent;color:var(--theme-dark);border:1.5px solid var(--theme-dark);">Cancel</button>
+        <button type="submit" class="btn-primary" style="flex:1;" id="modal-submit-btn">
+          <i class="fa-solid fa-paper-plane"></i> Send Request
+        </button>
+        <button type="button" class="btn-primary" onclick="closeModal()"
+                style="flex:1;background:transparent;color:var(--theme-dark);border:1.5px solid rgba(9,20,19,0.2);box-shadow:none;">
+          Cancel
+        </button>
       </div>
     </form>
   </div>
@@ -175,10 +390,8 @@
 
 {% block scripts %}
 <script>
-// Auto-hide flash messages after 4 seconds
 setTimeout(() => {
-  const flashes = document.querySelectorAll('.flash-msg');
-  flashes.forEach(f => {
+  document.querySelectorAll('.flash-msg').forEach(f => {
     f.style.transition = 'opacity 0.5s ease';
     f.style.opacity = '0';
     setTimeout(() => f.remove(), 500);
@@ -188,11 +401,24 @@ setTimeout(() => {
 function openModal(id, name, qty, restaurant) {
   document.getElementById('modal-form').action = '/donation/' + id + '/request';
   document.getElementById('modal-subtitle').textContent = 'Requesting from ' + restaurant;
-  document.getElementById('modal-food-tag').innerHTML = '<i class="fa-solid fa-box" style="margin-right:8px;"></i>' + qty + ' — ' + name;
+  document.getElementById('modal-food-tag').innerHTML =
+    '<i class="fa-solid fa-box" style="color:var(--theme-primary);margin-right:8px;"></i>' + qty + ' — ' + name;
   document.getElementById('modal-message').value = '';
   document.getElementById('req-modal').classList.add('open');
 }
 function closeModal() { document.getElementById('req-modal').classList.remove('open'); }
 document.getElementById('req-modal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+
+function updateBcUnit() {
+  const cat = document.getElementById('bc-cat').value;
+  const span = document.getElementById('bc-unit');
+  const hidden = document.getElementById('bc-unit-hidden');
+  const label = document.getElementById('bc-qty-label');
+  if (cat === 'produce') {
+    span.textContent = 'kgs'; hidden.value = 'kgs'; label.textContent = 'Weight (kgs) *';
+  } else {
+    span.textContent = 'items'; hidden.value = 'items'; label.textContent = 'Quantity *';
+  }
+}
 </script>
 {% endblock %}
