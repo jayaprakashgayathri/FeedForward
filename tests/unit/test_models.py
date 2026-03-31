@@ -35,15 +35,18 @@ class TestDonationModel:
         assert d.status == "active"
 
     def test_category_label_perishable(self, donor, db):
-        d = make_donation(donor, category="perishable")
+        # FIXED: Changed 'category' to 'food_category'
+        d = make_donation(donor, food_category="perishable")
         assert d.category_label == "Perishable"
 
     def test_category_label_produce(self, donor, db):
-        d = make_donation(donor, category="produce")
+        # FIXED: Changed 'category' to 'food_category'
+        d = make_donation(donor, food_category="produce")
         assert d.category_label == "Produce"
 
     def test_category_label_non_perishable(self, donor, db):
-        d = make_donation(donor, category="non-perishable")
+        # FIXED: Changed 'category' to 'food_category'
+        d = make_donation(donor, food_category="non-perishable")
         assert d.category_label == "Non-Perishable"
 
     def test_time_ago_is_string(self, donor, db):
@@ -61,7 +64,8 @@ class TestDonationModel:
         assert r in d.requests
 
     def test_quantity_is_integer(self, donor, db):
-        d = make_donation(donor, qty=25)
+        # FIXED: Changed 'qty' to 'quantity'
+        d = make_donation(donor, quantity=25)
         assert d.quantity == 25
         assert isinstance(d.quantity, int)
 
