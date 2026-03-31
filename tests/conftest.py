@@ -70,15 +70,16 @@ def make_user(role, email, org, password="pass1234"):
     return u
 
 
-def make_donation(donor, food_name="Test Food", qty=10, unit="items",
-                  category="perishable", deadline="18:00", status="active", notes=""):
+def make_donation(donor, food_name="Test Food", quantity=10, unit="items",
+                  food_category="perishable", pickup_deadline="18:00", status="active", notes=""):
+    # FIXED: Updated argument names to match the model (food_category, pickup_deadline, quantity)
     d = Donation(
         donor_id=donor.id, 
         food_name=food_name, 
-        food_category=category,
-        quantity=qty, 
+        food_category=food_category,
+        quantity=quantity, 
         unit=unit, 
-        pickup_deadline=deadline, 
+        pickup_deadline=pickup_deadline, 
         notes=notes, 
         status=status
     )
@@ -100,13 +101,14 @@ def make_request(donation, charity, message="Need this", status="pending"):
     return r
 
 
-def make_broadcast(charity, food_name="Rice and Beans", qty=20, unit="items",
-                   category="produce", needed_by="18:00", notes="", status="open"):
+def make_broadcast(charity, food_name="Rice and Beans", quantity=20, unit="items",
+                   food_category="produce", needed_by="18:00", notes="", status="open"):
+    # FIXED: Updated argument names to match the model (food_category, quantity)
     bc = CharityBroadcast(
         charity_id=charity.id, 
         food_name=food_name,
-        food_category=category, 
-        quantity=qty, 
+        food_category=food_category, 
+        quantity=quantity, 
         unit=unit,
         needed_by=needed_by, 
         notes=notes, 
