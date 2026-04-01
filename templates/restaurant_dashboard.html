@@ -11,11 +11,84 @@
     padding: 12px 28px; border-radius: 50px;
     font-size: 0.9rem; font-weight: 600; z-index: 3000;
     box-shadow: 0 8px 24px rgba(9,20,19,0.15);
+    animation: slideDown 0.4s ease-out;
+  }
+  @keyframes slideDown {
+    from { transform: translate(-50%, -20px); opacity: 0; }
+    to   { transform: translate(-50%, 0); opacity: 1; }
+  }
+
+  /* Community needs section inside right panel */
+  .community-divider {
+    height: 1px; background: rgba(9,20,19,0.08); margin: 1.5rem 0;
+  }
+  .community-section-title {
+    font-size: 0.75rem; font-weight: 800; text-transform: uppercase;
+    letter-spacing: 0.06em; color: rgba(9,20,19,0.5);
+    margin-bottom: 1rem;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .community-card {
+    background: rgba(176,228,204,0.12); border: 1px solid rgba(40,90,72,0.12);
+    border-radius: 16px; padding: 1.1rem; margin-bottom: 10px;
+  }
+  .community-card-top {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 6px;
+  }
+  .community-org  { font-weight: 800; font-size: 0.88rem; }
+  .community-time { font-size: 0.72rem; color: rgba(9,20,19,0.45); }
+  .community-need {
+    font-size: 0.82rem; font-weight: 700; color: var(--theme-primary);
+    margin-bottom: 4px;
+  }
+  .community-notes {
+    font-size: 0.78rem; font-style: italic; color: rgba(9,20,19,0.6);
+    background: rgba(255,255,255,0.8); padding: 7px 10px;
+    border-radius: 8px; border-left: 3px solid var(--theme-primary);
+    margin-bottom: 10px; line-height: 1.5;
+  }
+  .already-offered {
+    font-size: 0.75rem; font-weight: 700; color: var(--theme-primary);
+    background: rgba(40,90,72,0.08); padding: 7px 14px;
+    border-radius: 40px; border: 1px solid rgba(40,90,72,0.2);
+    text-align: center; display: block; width: 100%;
+  }
+
+  /* respond modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(9,20,19,0.55);
+    backdrop-filter: blur(4px); z-index: 4000;
+    display: flex; align-items: center; justify-content: center; padding: 2rem;
+    opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal-box {
+    background: #fff; border-radius: 24px; padding: 2.5rem;
+    width: 100%; max-width: 460px;
+    box-shadow: 0 24px 48px rgba(9,20,19,0.15);
+    transform: translateY(20px); transition: transform 0.25s ease;
+  }
+  .modal-overlay.open .modal-box { transform: translateY(0); }
+  .modal-box h3 { font-size: 1.4rem; font-weight: 800; margin-bottom: 0.3rem; }
+  .modal-box p  { font-size: 0.88rem; color: rgba(9,20,19,0.6); margin-bottom: 1.2rem; }
+  .modal-need-tag {
+    background: rgba(176,228,204,0.3); border: 1px solid rgba(40,90,72,0.2);
+    border-radius: 10px; padding: 10px 14px; font-size: 0.88rem; font-weight: 600;
+    margin-bottom: 1.2rem;
   }
 </style>
 {% endblock %}
 
 {% block body %}
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    {% for message in messages %}
+      <div class="flash-msg">{{ message }}</div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
 <nav class="top-nav">
   <a href="{{ url_for('index') }}" class="logo">Feed<b>Forward</b></a>
   <div class="nav-status">
@@ -32,16 +105,16 @@
 
 <div class="dashboard-wrapper">
 
-  <!-- LEFT SIDEBAR -->
+  <!-- ── LEFT SIDEBAR ── -->
   <aside class="dashboard-sidebar">
-    <div class="mascot-container" title="FeedForward mascot">
-      <div style="width:130px;height:130px;background:var(--theme-bg);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:4rem;">🍳</div>
+    <div class="mascot-container" title="FeedForward">
+      <div style="width:130px;height:130px;background:var(--theme-bg);border-radius:50%;
+                  display:flex;align-items:center;justify-content:center;font-size:4rem;">🍳</div>
     </div>
-
     <div class="stats-grid">
       <div class="stat-card">
         <label><i class="fa-solid fa-chart-simple"></i> Total Donations</label>
-        <div class="stat-value" id="stat-total">{{ total_donations }}</div>
+        <div class="stat-value">{{ total_donations }}</div>
       </div>
       <div class="stat-card">
         <label><i class="fa-solid fa-circle-check"></i> Completed</label>
@@ -52,7 +125,6 @@
         <div class="stat-value">{{ active_donations | length }}</div>
       </div>
     </div>
-
     <div class="sidebar-footer">
       <a href="{{ url_for('restaurant_history') }}" class="link-circular">
         View Full History
@@ -61,25 +133,23 @@
     </div>
   </aside>
 
-  <!-- MIDDLE: Form + Active Listings -->
+  <!-- ── MIDDLE: Post form + Active listings ── -->
   <main class="dashboard-main">
 
-    <!-- POST DONATION FORM -->
     <section class="action-card">
       <div class="card-header">
         <h2>List a New Donation</h2>
         <p>Broadcast your surplus to local charities.</p>
       </div>
-
       <form class="donation-form" action="{{ url_for('new_donation') }}" method="POST" id="donation-form">
         <div class="input-group">
           <label>Food Name / Description</label>
           <div class="custom-select" style="border-radius:14px;">
             <input type="text" name="food_name" placeholder="e.g. Fresh Tomatoes & Greens" required
-                   style="width:100%;border:none;background:transparent;padding:16px 18px;font-family:Inter,sans-serif;font-size:1rem;color:var(--theme-dark);outline:none;" />
+                   style="width:100%;border:none;background:transparent;padding:16px 18px;
+                          font-family:Inter,sans-serif;font-size:1rem;color:var(--theme-dark);outline:none;" />
           </div>
         </div>
-
         <div class="input-group">
           <label>Food Category</label>
           <div class="custom-select">
@@ -91,7 +161,6 @@
             <i class="fa-solid fa-chevron-down"></i>
           </div>
         </div>
-
         <div class="input-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
           <div class="input-group">
             <label id="quantityLabel">Quantity</label>
@@ -109,41 +178,43 @@
             </div>
           </div>
         </div>
-
         <div class="input-group">
           <label>Notes for Charity</label>
           <textarea name="notes" placeholder="e.g. Allergens, packaging info, pickup location..."></textarea>
         </div>
-
         <button type="submit" class="btn-primary" id="broadcast-btn">
           <i class="fa-solid fa-tower-broadcast"></i> Broadcast Donation
         </button>
       </form>
     </section>
 
-    <!-- ACTIVE LISTINGS -->
     <section class="listings-card">
       <div class="panel-header" style="margin-bottom:1.5rem;">
         <h3>Your Active Listings</h3>
       </div>
-
       {% if active_donations %}
         {% for d in active_donations %}
         <div class="listing-item">
           <div class="listing-info">
             <strong>{{ d.quantity }} {{ d.unit }} — {{ d.food_name }}</strong>
             <span>Posted {{ d.time_ago }} · {{ d.category_label }}
-              {% if d.status == 'pending' %} · <span style="color:var(--theme-primary);font-weight:700;">Request Pending</span>{% endif %}
+              {% if d.status == 'pending' %}
+              · <span style="color:var(--theme-primary);font-weight:700;">Request Pending</span>
+              {% endif %}
             </span>
           </div>
           <div style="display:flex;align-items:center;gap:10px;">
             <span class="editorial-pill">
-              <i class="fa-solid fa-circle" style="color:{% if d.status=='pending' %}#f59e0b{% else %}#16a34a{% endif %};font-size:8px;"></i>
+              <i class="fa-solid fa-circle"
+                 style="color:{% if d.status=='pending' %}#f59e0b{% else %}#16a34a{% endif %};font-size:8px;"></i>
               {{ d.status | capitalize }}
             </span>
             <form method="POST" action="{{ url_for('delete_donation', did=d.id) }}"
                   onsubmit="return confirm('Remove this listing?');" style="margin:0;">
-              <button type="submit" style="background:transparent;border:none;cursor:pointer;color:rgba(9,20,19,0.4);font-size:0.85rem;padding:6px;" title="Remove">
+              <button type="submit"
+                      style="background:transparent;border:none;cursor:pointer;
+                             color:rgba(9,20,19,0.4);font-size:0.85rem;padding:6px;"
+                      title="Remove">
                 <i class="fa-solid fa-xmark"></i>
               </button>
             </form>
@@ -160,11 +231,16 @@
 
   </main>
 
-  <!-- RIGHT: Charity Requests -->
+  <!-- ── RIGHT PANEL: Charity requests (always visible) + Community needs below ── -->
   <section class="request-panel">
+
+    <!-- ═══ PART A: Charity Requests on YOUR donations ═══ -->
     <div class="panel-header">
       <h3>Charity Requests</h3>
-      <span class="notification-count">{{ pending_requests | length }} New</span>
+      <span class="notification-count"
+            style="{% if not pending_requests %}background:rgba(9,20,19,0.08);color:rgba(9,20,19,0.45);{% endif %}">
+        {{ pending_requests | length }} New
+      </span>
     </div>
 
     <div class="request-list">
@@ -192,17 +268,19 @@
         </div>
         {% endfor %}
       {% else %}
-        <div style="text-align:center;padding:2rem;color:rgba(9,20,19,0.4);font-size:0.9rem;">
+        <div style="text-align:center;padding:1.5rem;color:rgba(9,20,19,0.4);font-size:0.9rem;">
           <i class="fa-regular fa-bell" style="display:block;font-size:1.5rem;margin-bottom:0.5rem;"></i>
           No pending requests right now.
         </div>
       {% endif %}
     </div>
 
-    <!-- Confirmed Pickups -->
+    <!-- Confirmed pickups -->
     {% if confirmed %}
-    <div class="scheduled-pickups" style="margin-top:1.5rem;">
-      <span class="editorial-pill" style="margin-bottom:16px;">Confirmed Pickups</span>
+    <div class="scheduled-pickups" style="margin-top:1rem;">
+      <span class="editorial-pill" style="margin-bottom:14px;display:inline-block;">
+        Confirmed Pickups
+      </span>
       {% for r in confirmed %}
       <div class="confirmed-card">
         <div class="confirmed-info">
@@ -210,7 +288,8 @@
           <span>{{ r.donation.food_name }} · Pickup by {{ r.donation.pickup_deadline }}</span>
         </div>
         <form method="POST" action="{{ url_for('complete_pickup', rid=r.id) }}">
-          <button type="submit" class="btn-primary" style="width:100%;padding:1rem;margin-top:15px;">
+          <button type="submit" class="btn-primary"
+                  style="width:100%;padding:1rem;margin-top:15px;">
             Mark Picked Up
           </button>
         </form>
@@ -219,23 +298,144 @@
     </div>
     {% endif %}
 
-  </section>
+    <!-- ═══ PART B: Community Food Needs (charity broadcasts) ═══ -->
+    <div class="community-divider"></div>
 
-</div><!-- /dashboard-wrapper -->
+    <div class="community-section-title">
+      <span><i class="fa-solid fa-hand-holding-heart" style="margin-right:6px;"></i>Community Food Needs</span>
+      {% if community_requests %}
+        <span style="background:rgba(40,90,72,0.1);color:var(--theme-primary);
+                     font-size:0.65rem;padding:3px 10px;border-radius:40px;
+                     border:1px solid rgba(40,90,72,0.2);">
+          {{ community_requests | length }} open
+        </span>
+      {% endif %}
+    </div>
+
+    {% if community_requests %}
+      {% for bc in community_requests %}
+      <div class="community-card" id="community-{{ bc.id }}">
+        <div class="community-card-top">
+          <div>
+            <div class="community-org">{{ bc.charity_user.organization_name }}</div>
+            <div class="community-time">{{ bc.time_ago }}</div>
+          </div>
+          <span style="font-size:0.65rem;font-weight:800;text-transform:uppercase;
+                       letter-spacing:0.05em;background:rgba(176,228,204,0.4);
+                       color:var(--theme-primary);padding:4px 9px;border-radius:40px;
+                       border:1px solid rgba(40,90,72,0.2);">
+            {{ bc.category_label }}
+          </span>
+        </div>
+        <div class="community-need">
+          Needs: {{ bc.quantity }} {{ bc.unit }} of {{ bc.food_name }}
+        </div>
+        <div style="font-size:0.75rem;color:rgba(9,20,19,0.5);margin-bottom:8px;">
+          Needed by {{ bc.needed_by }}
+        </div>
+        {% if bc.notes %}
+        <div class="community-notes">"{{ bc.notes }}"</div>
+        {% endif %}
+
+        {% if bc.id in my_response_ids %}
+          <span class="already-offered">
+            <i class="fa-solid fa-check" style="margin-right:5px;"></i>Offer Sent — Awaiting Confirmation
+          </span>
+        {% else %}
+          <button class="accept-btn"
+                  onclick="openRespondModal({{ bc.id }}, '{{ bc.food_name|e }}', '{{ bc.quantity }} {{ bc.unit }}', '{{ bc.charity_user.organization_name|e }}')"
+                  style="width:100%;">
+            Offer to Fulfil
+          </button>
+        {% endif %}
+      </div>
+      {% endfor %}
+    {% else %}
+      <div style="text-align:center;padding:1rem;color:rgba(9,20,19,0.35);font-size:0.82rem;">
+        <i class="fa-solid fa-seedling" style="display:block;font-size:1.2rem;margin-bottom:0.5rem;opacity:0.3;"></i>
+        No community food requests yet.
+      </div>
+    {% endif %}
+
+  </section>
+</div>
+
+<!-- ── RESPOND TO BROADCAST MODAL ── -->
+<div class="modal-overlay" id="respond-modal">
+  <div class="modal-box">
+    <h3>Offer to Fulfil</h3>
+    <p id="respond-subtitle">Send your offer to the charity</p>
+    <div class="modal-need-tag" id="respond-need-tag"></div>
+    <form method="POST" id="respond-form">
+      <div class="input-group" style="margin-bottom:1rem;">
+        <label style="font-size:0.85rem;font-weight:700;display:block;margin-bottom:8px;">
+          Message to Charity (optional)
+        </label>
+        <div style="background:#f7f7f7;border:1.5px solid rgba(9,20,19,0.08);
+                    border-radius:14px;overflow:hidden;">
+          <textarea name="message" id="respond-message"
+                    placeholder="e.g. We can have this ready by 6pm tonight..."
+                    style="width:100%;border:none;background:transparent;
+                           padding:14px 16px;font-family:Inter,sans-serif;
+                           font-size:0.9rem;color:var(--theme-dark);outline:none;
+                           resize:vertical;min-height:90px;"></textarea>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:1.2rem;">
+        <button type="submit" class="btn-primary" style="flex:1;" id="respond-submit-btn">
+          <i class="fa-solid fa-handshake"></i> Send Offer
+        </button>
+        <button type="button" onclick="closeRespondModal()"
+                style="flex:1;background:transparent;color:var(--theme-dark);
+                       border:1.5px solid rgba(9,20,19,0.2);border-radius:50px;
+                       padding:14px;font-weight:700;font-size:0.85rem;cursor:pointer;">
+          Cancel
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
+/* Auto-hide flash messages */
+setTimeout(() => {
+  document.querySelectorAll('.flash-msg').forEach(f => {
+    f.style.transition = 'opacity 0.5s ease';
+    f.style.opacity = '0';
+    setTimeout(() => f.remove(), 500);
+  });
+}, 4000);
+
+/* Donation form: update unit label based on category */
 function updateUnit() {
-  const foodType = document.getElementById('foodType').value;
-  const unitLabel = document.getElementById('unitLabel');
-  const unitHidden = document.getElementById('unitHidden');
-  const quantityLabel = document.getElementById('quantityLabel');
+  const foodType     = document.getElementById('foodType').value;
+  const unitLabel    = document.getElementById('unitLabel');
+  const unitHidden   = document.getElementById('unitHidden');
+  const qtyLabel     = document.getElementById('quantityLabel');
   if (foodType === 'produce') {
-    unitLabel.innerText = 'kgs'; unitHidden.value = 'kgs'; quantityLabel.innerText = 'Weight (kgs)';
+    unitLabel.innerText = 'kgs'; unitHidden.value = 'kgs'; qtyLabel.innerText = 'Weight (kgs)';
   } else {
-    unitLabel.innerText = 'items'; unitHidden.value = 'items'; quantityLabel.innerText = 'Quantity';
+    unitLabel.innerText = 'items'; unitHidden.value = 'items'; qtyLabel.innerText = 'Quantity';
   }
 }
+
+/* Respond-to-broadcast modal */
+function openRespondModal(bid, foodName, qty, charity) {
+  document.getElementById('respond-form').action = '/broadcast/' + bid + '/respond';
+  document.getElementById('respond-subtitle').textContent = 'Offering to fulfil request from ' + charity;
+  document.getElementById('respond-need-tag').innerHTML =
+    '<i class="fa-solid fa-hand-holding-heart" style="color:var(--theme-primary);margin-right:8px;"></i>'
+    + qty + ' of ' + foodName;
+  document.getElementById('respond-message').value = '';
+  document.getElementById('respond-modal').classList.add('open');
+}
+function closeRespondModal() {
+  document.getElementById('respond-modal').classList.remove('open');
+}
+document.getElementById('respond-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeRespondModal();
+});
 </script>
 {% endblock %}
