@@ -22,8 +22,10 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3 {
-  letter-spacing: -0.03em;
+h1,
+h2,
+h3 {
+  letter-spacing: -0.03em; /* Editorial tight spacing */
 }
 
 /* --- 3. NAVIGATION BAR --- */
@@ -32,7 +34,7 @@ h1, h2, h3 {
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem 5%;
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.7); /* Frosted white glass on Mint */
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   position: sticky;
@@ -100,7 +102,7 @@ h1, h2, h3 {
   color: var(--theme-dark);
 }
 
-/* --- 5. CTA CARDS --- */
+/* --- 5. CTA CARDS (Floating White Cards) --- */
 .hero-btns {
   display: flex;
   justify-content: center;
@@ -113,18 +115,9 @@ h1, h2, h3 {
   padding: 3rem 2.5rem;
   border-radius: 32px;
   width: 350px;
-  box-shadow: 0 20px 40px rgba(9, 20, 19, 0.05);
+  border: none;
+  box-shadow: 0 20px 40px rgba(9, 20, 19, 0.05); /* Soft dark shadow */
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  /* Added semantic borders to distinguish options */
-  border: 2px solid transparent;
-}
-
-.cta-card:first-child { 
-  border-top: 8px solid var(--theme-primary); /* Restaurant Accent */
-}
-
-.cta-card:last-child { 
-  border-top: 8px solid var(--theme-dark); /* Charity Accent */
 }
 
 .cta-card:hover {
@@ -133,7 +126,7 @@ h1, h2, h3 {
 
 .cta-card h3 {
   margin-bottom: 1rem;
-  color: var(--theme-primary); /* Headings pop with primary color */
+  color: var(--theme-dark);
   font-size: 1.6rem;
   font-weight: 800;
 }
@@ -146,8 +139,12 @@ h1, h2, h3 {
   opacity: 0.8;
 }
 
-/* --- 6. BUTTONS --- */
-button, .btn-solid, .btn-outline, .btn-primary, .btn-secondary {
+/* --- 6. BUTTONS (Editorial Pill Shape) --- */
+button,
+.btn-solid,
+.btn-outline,
+.btn-primary,
+.btn-secondary {
   padding: 14px 32px;
   border-radius: 50px;
   cursor: pointer;
@@ -161,18 +158,17 @@ button, .btn-solid, .btn-outline, .btn-primary, .btn-secondary {
   display: inline-block;
 }
 
-.btn-primary, .btn-solid {
+.btn-primary,
+.btn-solid,
+.btn-secondary {
   background: var(--theme-primary);
   color: var(--theme-surface);
-  box-shadow: 0 8px 24px rgba(40, 90, 72, 0.25);
+  box-shadow: 0 8px 24px rgba(40, 90, 72, 0.25); /* Pine glowing shadow */
 }
 
-/* Specific button for Charity card to look distinct */
-.cta-card:last-child .btn-primary {
-  background: var(--theme-dark);
-}
-
-.btn-primary:hover, .btn-solid:hover {
+.btn-primary:hover,
+.btn-solid:hover,
+.btn-secondary:hover {
   background: var(--theme-dark);
   transform: translateY(-3px);
   box-shadow: 0 12px 28px rgba(9, 20, 19, 0.2);
@@ -184,27 +180,62 @@ button, .btn-solid, .btn-outline, .btn-primary, .btn-secondary {
   background: transparent;
 }
 
-/* --- 7. STATS BAR --- */
-.stats-bar {
+.btn-outline:hover {
   background: var(--theme-dark);
+  color: var(--theme-surface);
+}
+
+/* --- 7. STATS BAR (High Contrast Inverse) --- */
+.stats-bar {
+  background: var(--theme-dark); /* Deep dark background */
   color: var(--theme-surface);
   display: flex;
   justify-content: space-around;
   padding: 4rem 5%;
-  margin: 4rem 3%;
+  margin-top: 4rem;
+  margin-bottom: 4rem;
   border-radius: 32px;
+  margin-left: 3%;
+  margin-right: 3%;
   box-shadow: 0 20px 40px rgba(9, 20, 19, 0.15);
+}
+
+.stat-item {
+  text-align: center;
 }
 
 .stat-item h2 {
   font-size: 3.5rem;
   font-weight: 800;
-  color: var(--theme-bg); /* High contrast Mint on Dark */
+  color: var(--theme-bg); /* Mint colored numbers! */
   margin-bottom: 0.5rem;
 }
 
+.stat-item p {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+/* --- 8. RESPONSIVE QUERIES --- */
 @media (max-width: 768px) {
-  .hero h1 { font-size: 2.8rem; }
-  .hero-btns { flex-direction: column; align-items: center; }
-  .cta-card { width: 100%; max-width: 380px; }
+  .hero h1 {
+    font-size: 2.8rem;
+  }
+  .hero-btns {
+    flex-direction: column;
+    align-items: center;
+  }
+  .stats-bar {
+    flex-direction: column;
+    gap: 3rem;
+    border-radius: 24px;
+    padding: 3rem 5%;
+  }
+  .cta-card {
+    width: 100%;
+    max-width: 380px;
+  }
 }
