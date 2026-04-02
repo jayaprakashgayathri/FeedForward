@@ -1,9 +1,16 @@
+```css
 .hidden {
   display: none !important;
 }
 
 .signup-wide {
-  max-width: 600px !important; /* Wider for the two columns */
+  max-width: 600px !important;
+  padding: 2rem;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 20px 40px rgba(4, 12, 14, 0.12);
+  border: 1px solid rgba(164, 151, 142, 0.25);
+  backdrop-filter: blur(10px);
 }
 
 .role-options {
@@ -16,27 +23,54 @@
   flex: 1;
   padding: 2rem;
   border: 2px solid var(--accent-sand);
-  border-radius: 15px;
+  border-radius: 18px;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  background: white;
+  background: linear-gradient(145deg, #ffffff, var(--bg-alabaster));
+  box-shadow: 0 10px 25px rgba(4, 12, 14, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.role-box::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 5px;
+  background: linear-gradient(to right, var(--accent-sand), var(--secondary-sage));
 }
 
 .role-box:hover {
   border-color: var(--secondary-sage);
-  transform: translateY(-5px);
+  transform: translateY(-6px) scale(1.01);
   background: var(--bg-alabaster);
+  box-shadow: 0 18px 35px rgba(4, 12, 14, 0.15);
 }
 
 .role-box .icon {
   font-size: 3rem;
   margin-bottom: 1rem;
+  color: var(--secondary-sage);
+  transition: transform 0.3s ease;
+}
+
+.role-box:hover .icon {
+  transform: scale(1.1);
 }
 
 .role-box h3 {
   color: var(--primary-earth);
   margin-bottom: 0.5rem;
+  font-size: 1.2rem;
+}
+
+.role-box p {
+  color: var(--secondary-sage);
+  font-size: 0.95rem;
+  line-height: 1.5;
 }
 
 /* Grid for the forms */
@@ -44,6 +78,25 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
+}
+
+.input-grid input,
+.input-grid select {
+  width: 100%;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(164, 151, 142, 0.4);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--primary-earth);
+  transition: all 0.3s ease;
+}
+
+.input-grid input:focus,
+.input-grid select:focus {
+  outline: none;
+  border-color: var(--secondary-sage);
+  box-shadow: 0 0 0 4px rgba(82, 91, 86, 0.15);
+  background: #fff;
 }
 
 @media (max-width: 500px) {
@@ -65,11 +118,14 @@
 .top-nav .logo {
   font-size: 1.6rem;
   color: var(--primary-earth);
-  transition: opacity 0.2s;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  transition: all 0.2s ease;
 }
 
 .top-nav .logo:hover {
   opacity: 0.8;
+  transform: translateY(-2px);
 }
 
 /* Hide utility */
@@ -86,7 +142,34 @@ button.back-link {
   padding: 0;
   margin-bottom: 1rem;
   color: var(--secondary-sage);
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: color 0.3s ease, transform 0.3s ease;
+}
+
+button.back-link:hover {
+  color: var(--primary-earth);
+  transform: translateX(-3px);
+}
+
+/* Primary action button */
+button[type="submit"] {
+  width: 100%;
+  padding: 1rem;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(to right, var(--primary-earth), var(--secondary-sage));
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 12px 24px rgba(19, 34, 39, 0.18);
+}
+
+button[type="submit"]:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 30px rgba(19, 34, 39, 0.25);
 }
 
 /* Mobile Responsiveness */
@@ -97,7 +180,14 @@ button.back-link {
     text-align: center;
     top: 20px;
   }
+
   .signup-wide {
-    margin-top: 60px; /* Space for the logo on mobile */
+    margin-top: 60px;
+    padding: 1.5rem;
+  }
+
+  .role-box {
+    padding: 1.5rem;
   }
 }
+```
