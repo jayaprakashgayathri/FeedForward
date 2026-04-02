@@ -8,7 +8,183 @@ on:
 
 jobs:
   # ────────────────────────────────────────────────────────────────────────────
-  # JOB 1: Backend tests (models, routes, auth, donations, requests)
+  # JOB 1: Frontend checks (HTML templates + CSS validation)
+  # ────────────────────────────────────────────────────────────────────────────
+  frontend-tests:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check all HTML templates exist
+        run: |
+          MISSING=0
+          for f in index.html login.html register.html base.html \
+                   restaurant_dashboard.html restaurant_history.html \
+                   charity_browse.html charity_history.html; do
+            if [ -f "templates/$f" ]; then
+              echo "✓ templates/$f"
+            elif [ -f "$f" ]; then
+              echo "✓ $f (root)"
+            else
+              echo "✗ MISSING: $f"
+              MISSING=1
+            fi
+          done
+          exit $MISSING
+
+      - name: Check all CSS files exist
+        run: |
+          MISSING=0
+          for f in style.css dashboard.css history.css login.css signup.css charity.css; do
+            if [ -f "static/$f" ]; then
+              echo "✓ static/$f"
+            elif [ -f "$f" ]; then
+              echo "✓ $f (root)"
+            else
+              echo "✗ MISSING: $f"
+              MISSING=1
+            fi
+          done
+          exit $MISSING
+
+      - name: Check CSS contains required design variables
+        run: |
+          MISSING=0
+          for var in "--theme-dark" "--theme-primary" "--theme-bg" "--theme-surface"; do
+            FILES=$(grep -rl "$var" . --include="*.css" 2>/dev/null | head -1)
+            if [ -n "$FILES" ]; then
+              echo "✓ $var found"
+            else
+              echo "✗ CSS variable $var not found in any .css file"
+              MISSING=1
+            fi
+          done
+          exit $MISSING
+
+      - name: Check templates reference valid static files
+        run: |
+          python3 - <<'EOF'
+          import os, sys
+
+          template_dir = "templates" if os.path.isdir("templates") else "."
+          css_dir      = "static"    if os.path.isdir("static")    else "."
+
+          expected_css = [
+              "style.css", "dashboard.css", "history.css",
+              "login.css", "signup.css", "charity.css"
+          ]
+          issues = []
+
+          for fname in os.listdir(template_dir):
+              if not fname.endswith(".html"):
+                  continue
+              content = open(os.path.join(template_dir, fname)).read()
+              for css in expected_css:
+                  if css in content:
+                      if not os.path.exists(os.path.join(css_dir, css)) and \
+                         not os.path.exists(css):
+                          issues.append(f"{fname} references {css} but file not found")
+
+          if issues:
+              [print("✗", i) for i in issues]
+              sys.exit(1)
+          print("✓ All template static references are valid")
+          EOF
+
+      - name: Check HTML templates have required structural elements
+        run: |
+          python3 - <<'EOF'
+          import os, sys
+
+          template_dir = "templates" if os.path.isdir("templates") else "."
+          issues = []
+
+          checks = {
+              "base.html":                   ["Inter", "font-awesome"],
+              "index.html":                  ["FeedForward", "Restaurant", "Charit"],
+              "login.html":                  ["email", "password"],
+              "register.html":               ["role", "organization_name"],
+              "restaurant_dashboard.html":   ["food_name", "pickup_deadline", "food_category"],
+              "restaurant_history.html":     ["Donation History", "filter"],
+              "charity_browse.html":         ["search", "Request Donation", "food_name"],
+              "charity_history.html":        ["Request History"],
+          }
+
+          for fname, keywords in checks.items():
+              path = os.path.join(template_dir, fname)
+              if not os.path.exists(path):
+                  path = fname  # fallback to root
+              if not os.path.exists(path):
+                  issues.append(f"MISSING template: {fname}")
+                  continue
+              content = open(path).read()
+              for kw in keywords:
+                  if kw not in content:
+                      issues.append(f"{fname}: expected to contain '{kw}'")
+
+          if issues:
+              [print("✗", i) for i in issues]
+              sys.exit(1)
+          print("✓ All templates contain expected structural elements")
+          EOF
+
+      - name: Check no broken Jinja2 block tags
+        run: |
+          python3 - <<'EOF'
+          import os, re, sys
+
+          template_dir = "templates" if os.path.isdir("templates") else "."
+          issues = []
+
+          for fname in os.listdir(template_dir):
+              if not fname.endswith(".html"):
+                  continue
+              content = open(os.path.join(template_dir, fname)).read()
+              blocks   = re.findall(r"{%\s*block\s+(\w+)", content)
+              endblocks = re.findall(r"{%\s*endblock", content)
+              if len(blocks) != len(endblocks):
+                  issues.append(
+                      f"{fname}: {len(blocks)} block(s) but {len(endblocks)} endblock(s)"
+                  )
+
+          if issues:
+              [print("✗", i) for i in issues]
+              sys.exit(1)
+          print("✓ All Jinja2 block/endblock tags are balanced")
+          EOF
+
+      - name: Check CSS colour palette consistency
+        run: |
+          python3 - <<'EOF'
+          import os, re, sys
+
+          css_dir = "static" if os.path.isdir("static") else "."
+          # Hardcoded hex values that should NOT appear — use CSS vars instead
+          forbidden_hex = ["#8a7650", "#8e977d", "#ece7d1", "#dbcea5", "#333029"]
+          issues = []
+
+          for fname in os.listdir(css_dir):
+              if not fname.endswith(".css"):
+                  continue
+              content = open(os.path.join(css_dir, fname)).read()
+              for hex_val in forbidden_hex:
+                  if hex_val.lower() in content.lower():
+                      issues.append(
+                          f"{fname}: hardcoded legacy colour {hex_val} found — use CSS variables"
+                      )
+
+          if issues:
+              [print("⚠", i) for i in issues]
+              # Warning only — don't fail the build for palette drift
+          else:
+              print("✓ No legacy hardcoded colours found")
+          EOF
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # JOB 2: Backend tests (models, routes, auth, donations, requests, broadcasts)
   # Uses SQLite in-memory — no Docker required
   # ────────────────────────────────────────────────────────────────────────────
   backend-tests:
@@ -35,12 +211,12 @@ jobs:
             -v --tb=short
 
   # ────────────────────────────────────────────────────────────────────────────
-  # JOB 2: Docker build & Push to GHCR
+  # JOB 3: Docker build & Push to GHCR
   # ────────────────────────────────────────────────────────────────────────────
   docker-build:
     name: Docker Build & Push
     runs-on: ubuntu-latest
-    needs: backend-tests
+    needs: [frontend-tests, backend-tests]
     permissions:
       packages: write
       contents: read
@@ -69,7 +245,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   # ────────────────────────────────────────────────────────────────────────────
-  # JOB 3: Selenium E2E tests
+  # JOB 4: Selenium E2E tests
   # Flask runs natively on the runner against a Postgres service container
   # ────────────────────────────────────────────────────────────────────────────
   selenium:
@@ -153,47 +329,3 @@ jobs:
         if: always()
         run: |
           [ -f flask.pid ] && kill $(cat flask.pid) || true
-
-  # ────────────────────────────────────────────────────────────────────────────
-  # JOB 4: Deploy to Server (main branch only)
-  # Skips cleanly if SERVER_HOST secret is not configured yet.
-  # Add SERVER_HOST, SERVER_USER, SERVER_SSH_KEY, POSTGRES_PASSWORD, SECRET_KEY
-  # under Settings → Secrets and variables → Actions to activate this job.
-  # ────────────────────────────────────────────────────────────────────────────
-  deploy:
-    name: Deploy to Server
-    runs-on: ubuntu-latest
-    needs: [backend-tests, selenium]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-
-    steps:
-      - name: Skip if deploy secrets not configured
-        id: check
-        run: |
-          if [ -z "${{ secrets.SERVER_HOST }}" ]; then
-            echo "SERVER_HOST secret not set — deploy skipped."
-            echo "skip=true" >> $GITHUB_OUTPUT
-          else
-            echo "skip=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Deploy via SSH
-        if: steps.check.outputs.skip == 'false'
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host:     ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key:      ${{ secrets.SERVER_SSH_KEY }}
-          script: |
-            cd /opt/feedforward
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            git pull origin main
-            echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" > .env
-            echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> .env
-            echo "POSTGRES_USER=feedforward" >> .env
-            echo "POSTGRES_DB=feedforward" >> .env
-            echo "POSTGRES_HOST=db" >> .env
-            echo "POSTGRES_PORT=5432" >> .env
-            docker compose pull
-            docker compose up -d
-            docker system prune -f
