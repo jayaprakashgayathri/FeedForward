@@ -1,27 +1,172 @@
-/* Table Status Pills - Refined Colors */
-.status-pill.completed {
-  background: var(--theme-primary); /* Pine Green = Success */
-  color: #ffffff;
-  border: none;
+/* Navigation & Back Button */
+.top-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 5%;
+  background: white;
+  border-bottom: 1px solid var(--accent-sand);
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 1000;
+  box-sizing: border-box;
 }
 
-.status-pill.pending {
-  background: var(--theme-bg); /* Mint Green = In Progress */
-  color: var(--theme-primary);
-  border: 1.5px solid var(--theme-primary);
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background-color: var(--bg-alabaster);
+  border: 1px solid var(--accent-sand);
+  border-radius: 12px;
+  color: var(--text-dark);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Table Hover */
-.history-table tr:hover td {
-  background-color: rgba(176, 228, 204, 0.2); /* Very light mint hover */
+.back-btn:hover {
+  background-color: var(--primary-earth);
+  color: white;
+  border-color: var(--primary-earth);
+  transform: translateX(-5px);
+  box-shadow: 0 4px 12px rgba(138, 118, 80, 0.2);
+}
+
+.back-btn svg {
+  transition: stroke 0.2s ease;
+}
+
+.back-btn:hover svg {
+  stroke: white;
+}
+
+/* History Page Layout */
+.history-page-container {
+  margin-top: 100px;
+  padding: 2rem 5%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.history-page-header {
+  margin-bottom: 2rem;
 }
 
 .history-page-header h1 {
-  color: var(--theme-primary);
-  font-weight: 800;
+  color: var(--primary-earth);
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.history-page-header p {
+  opacity: 0.7;
+  color: var(--text-dark);
+}
+
+/* Filter Styling */
+.filter-bar {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.filter-btn {
+  padding: 10px 22px;
+  border-radius: 20px;
+  border: 1px solid var(--accent-sand);
+  background: white;
+  font-weight: 600;
+  color: var(--text-dark);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-btn:hover:not(.active) {
+  background: var(--bg-alabaster);
+  border-color: var(--primary-earth);
 }
 
 .filter-btn.active {
-  background: var(--theme-primary);
+  background: var(--primary-earth);
   color: white;
+  border-color: var(--primary-earth);
+}
+
+/* Table Styling */
+.history-card {
+  background: white;
+  border-radius: 24px;
+  border: 1px solid var(--accent-sand);
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(138, 118, 80, 0.05);
+}
+
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.history-table th {
+  background: var(--bg-alabaster);
+  padding: 20px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--primary-earth);
+  border-bottom: 1px solid var(--accent-sand);
+  text-transform: uppercase;
+  letter-spacing: 0.05rem;
+}
+
+.history-table td {
+  padding: 20px;
+  border-bottom: 1px solid var(--bg-alabaster);
+  font-size: 0.95rem;
+  vertical-align: middle;
+  color: var(--text-dark);
+}
+
+.history-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Updated Modern Status Pills */
+.status-pill {
+  padding: 6px 14px;
+  border-radius: 8px; /* Slightly softer than 12px */
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  display: inline-block;
+}
+
+.status-pill.completed {
+  background: rgba(142, 151, 125, 0.15); /* Sage Green backdrop */
+  color: #4a5d23; /* Darker Sage for readability */
+  border: 1px solid rgba(142, 151, 125, 0.3);
+}
+
+.status-pill.pending {
+  background: rgba(138, 118, 80, 0.1); /* Earth brown backdrop */
+  color: var(--primary-earth);
+  border: 1px solid rgba(138, 118, 80, 0.2);
+}
+
+/* Mobile Tweak */
+@media (max-width: 768px) {
+  .history-card {
+    overflow-x: auto;
+  }
+  .history-table {
+    min-width: 800px;
+  }
+  .top-nav {
+    padding: 1rem 15px;
+  }
 }
