@@ -8,7 +8,7 @@ on:
 
 jobs:
   # ────────────────────────────────────────────────────────────────────────────
-  # JOB 1: Unit + Integration tests
+  # JOB 1: Unit + Integration tests (SQLite in-memory, no Docker needed)
   # ────────────────────────────────────────────────────────────────────────────
   unit-and-integration:
     name: Unit & Integration Tests
@@ -27,14 +27,96 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run unit tests
-        run: pytest tests/unit/ -v --tb=short
-
-      - name: Run integration tests
-        run: pytest tests/integration/ -v --tb=short
+      - name: Run all non-Selenium tests
+        run: |
+          pytest tests/ \
+            --ignore=tests/selenium \
+            -v --tb=short
 
   # ────────────────────────────────────────────────────────────────────────────
-  # JOB 2: Docker build & Push to GHCR
+  # JOB 2: Frontend checks (CSS/HTML/static asset validation)
+  # ────────────────────────────────────────────────────────────────────────────
+  frontend-checks:
+    name: Frontend Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check all HTML templates exist
+        run: |
+          MISSING=0
+          for f in index.html login.html register.html base.html \
+                   restaurant_dashboard.html restaurant_history.html \
+                   charity_browse.html charity_history.html; do
+            if [ -f "templates/$f" ]; then
+              echo "✓ templates/$f"
+            elif [ -f "$f" ]; then
+              echo "✓ $f (root)"
+            else
+              echo "✗ MISSING: $f"
+              MISSING=1
+            fi
+          done
+          exit $MISSING
+
+      - name: Check all CSS files exist
+        run: |
+          MISSING=0
+          for f in style.css dashboard.css history.css login.css signup.css charity.css; do
+            if [ -f "static/$f" ]; then
+              echo "✓ static/$f"
+            elif [ -f "$f" ]; then
+              echo "✓ $f (root)"
+            else
+              echo "✗ MISSING: $f"
+              MISSING=1
+            fi
+          done
+          exit $MISSING
+
+      - name: Check CSS for required variables
+        run: |
+          for var in --theme-dark --theme-primary --theme-bg --theme-surface; do
+            grep -r "$var" style.css dashboard.css charity.css 2>/dev/null && \
+              echo "✓ $var found" || echo "⚠ $var not found in CSS"
+          done
+
+      - name: Check templates reference correct static files
+        run: |
+          python3 - <<'EOF'
+          import os, sys
+
+          # Determine template dir
+          template_dir = "templates" if os.path.isdir("templates") else "."
+          css_dir = "static" if os.path.isdir("static") else "."
+
+          issues = []
+          expected_css = ["style.css","dashboard.css","history.css","login.css","signup.css","charity.css"]
+
+          for fname in os.listdir(template_dir):
+              if not fname.endswith(".html"):
+                  continue
+              path = os.path.join(template_dir, fname)
+              content = open(path).read()
+              # Check for broken static refs (file referenced but missing)
+              for css in expected_css:
+                  if css in content:
+                      css_path = os.path.join(css_dir, css)
+                      if not os.path.exists(css_path) and not os.path.exists(css):
+                          issues.append(f"{fname} references {css} but file not found")
+
+          if issues:
+              for i in issues:
+                  print("✗", i)
+              sys.exit(1)
+          else:
+              print("✓ All template static references are valid")
+          EOF
+
+  # ────────────────────────────────────────────────────────────────────────────
+  # JOB 3: Docker build (validates image compiles cleanly)
   # ────────────────────────────────────────────────────────────────────────────
   docker-build:
     name: Docker Build & Push
@@ -68,35 +150,43 @@ jobs:
           cache-to: type=gha,mode=max
 
   # ────────────────────────────────────────────────────────────────────────────
-  # JOB 3: Full stack + Selenium tests via Docker Compose
+  # JOB 4: Selenium E2E — Flask runs directly on the runner (no Docker needed)
   # ────────────────────────────────────────────────────────────────────────────
   selenium:
     name: Selenium E2E Tests
     runs-on: ubuntu-latest
     needs: docker-build
 
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER:     feedforward
+          POSTGRES_PASSWORD: feedforward_secret
+          POSTGRES_DB:       feedforward
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U feedforward -d feedforward"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      POSTGRES_USER:     feedforward
+      POSTGRES_PASSWORD: feedforward_secret
+      POSTGRES_DB:       feedforward
+      POSTGRES_HOST:     localhost
+      POSTGRES_PORT:     "5432"
+      SECRET_KEY:        test-secret-ci
+      FLASK_DEBUG:       "false"
+      PORT:              "5000"
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Docker Compose
-        run: docker compose version
-
-      - name: Start DB and web services
-        run: |
-          docker compose up -d db web
-          echo "Waiting for web service to be healthy..."
-          timeout 90 bash -c '
-            until docker compose exec -T web python -c \
-              "import urllib.request; urllib.request.urlopen(\"http://localhost:5000/health\")" \
-              2>/dev/null; do
-              echo "  still waiting..."
-              sleep 3
-            done
-          '
-          echo "Web service is up!"
-
-      - name: Set up Python 3.11 for Selenium runner
+      - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -105,30 +195,49 @@ jobs:
       - name: Install Python dependencies
         run: pip install -r requirements.txt
 
-      - name: Set up Chrome for Selenium
+      - name: Init DB tables
+        run: |
+          python - <<'PY'
+          from app import create_app
+          from models import db
+          app = create_app()
+          with app.app_context():
+              db.create_all()
+          print("DB tables created.")
+          PY
+
+      - name: Start Flask app in background
+        run: |
+          nohup python app.py > flask.log 2>&1 &
+          echo $! > flask.pid
+          # Poll until /health responds
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:5000/health && echo "Flask is up!" && break
+            echo "Waiting... ($i)"
+            sleep 3
+          done
+
+      - name: Install Chrome
         uses: browser-actions/setup-chrome@v1
 
       - name: Run Selenium tests
         env:
-          APP_BASE_URL: "http://localhost:5000"
+          APP_BASE_URL:  "http://localhost:5000"
           SELENIUM_HOST: "localhost"
         run: |
           pytest tests/selenium/ -v --tb=short
 
-      - name: Dump logs on failure
+      - name: Print Flask logs on failure
         if: failure()
-        run: |
-          echo "=== web logs ==="
-          docker compose logs web
-          echo "=== db logs ==="
-          docker compose logs db
+        run: cat flask.log || true
 
-      - name: Tear down
+      - name: Stop Flask
         if: always()
-        run: docker compose down -v
+        run: |
+          [ -f flask.pid ] && kill $(cat flask.pid) || true
 
   # ────────────────────────────────────────────────────────────────────────────
-  # JOB 4: Deploy to Server
+  # JOB 5: Deploy to Server (main branch only)
   # ────────────────────────────────────────────────────────────────────────────
   deploy:
     name: Deploy to Server
@@ -140,27 +249,19 @@ jobs:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.SERVER_HOST }}
+          host:     ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
+          key:      ${{ secrets.SERVER_SSH_KEY }}
           script: |
             cd /opt/feedforward
-            # Log in to registry on the server to pull the private image
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            
             git pull origin main
-            
-            # Recreate .env file
             echo "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}" > .env
             echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> .env
             echo "POSTGRES_USER=feedforward" >> .env
             echo "POSTGRES_DB=feedforward" >> .env
             echo "POSTGRES_HOST=db" >> .env
             echo "POSTGRES_PORT=5432" >> .env
-            
-            # Pull the latest image we just pushed in JOB 2
             docker compose pull
             docker compose up -d
-            
-            # Clean up old unused images to save disk space
             docker system prune -f
