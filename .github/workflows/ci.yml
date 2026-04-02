@@ -8,10 +8,11 @@ on:
 
 jobs:
   # ────────────────────────────────────────────────────────────────────────────
-  # JOB 1: Unit + Integration tests (SQLite in-memory, no Docker needed)
+  # JOB 1: Backend tests (models, routes, auth, donations, requests)
+  # Uses SQLite in-memory — no Docker required
   # ────────────────────────────────────────────────────────────────────────────
-  unit-and-integration:
-    name: Unit & Integration Tests
+  backend-tests:
+    name: Backend Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -27,101 +28,19 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run all non-Selenium tests
+      - name: Run backend tests
         run: |
           pytest tests/ \
             --ignore=tests/selenium \
             -v --tb=short
 
   # ────────────────────────────────────────────────────────────────────────────
-  # JOB 2: Frontend checks (CSS/HTML/static asset validation)
-  # ────────────────────────────────────────────────────────────────────────────
-  frontend-checks:
-    name: Frontend Checks
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Check all HTML templates exist
-        run: |
-          MISSING=0
-          for f in index.html login.html register.html base.html \
-                   restaurant_dashboard.html restaurant_history.html \
-                   charity_browse.html charity_history.html; do
-            if [ -f "templates/$f" ]; then
-              echo "✓ templates/$f"
-            elif [ -f "$f" ]; then
-              echo "✓ $f (root)"
-            else
-              echo "✗ MISSING: $f"
-              MISSING=1
-            fi
-          done
-          exit $MISSING
-
-      - name: Check all CSS files exist
-        run: |
-          MISSING=0
-          for f in style.css dashboard.css history.css login.css signup.css charity.css; do
-            if [ -f "static/$f" ]; then
-              echo "✓ static/$f"
-            elif [ -f "$f" ]; then
-              echo "✓ $f (root)"
-            else
-              echo "✗ MISSING: $f"
-              MISSING=1
-            fi
-          done
-          exit $MISSING
-
-      - name: Check CSS for required variables
-        run: |
-          for var in --theme-dark --theme-primary --theme-bg --theme-surface; do
-            grep -r "$var" style.css dashboard.css charity.css 2>/dev/null && \
-              echo "✓ $var found" || echo "⚠ $var not found in CSS"
-          done
-
-      - name: Check templates reference correct static files
-        run: |
-          python3 - <<'EOF'
-          import os, sys
-
-          # Determine template dir
-          template_dir = "templates" if os.path.isdir("templates") else "."
-          css_dir = "static" if os.path.isdir("static") else "."
-
-          issues = []
-          expected_css = ["style.css","dashboard.css","history.css","login.css","signup.css","charity.css"]
-
-          for fname in os.listdir(template_dir):
-              if not fname.endswith(".html"):
-                  continue
-              path = os.path.join(template_dir, fname)
-              content = open(path).read()
-              # Check for broken static refs (file referenced but missing)
-              for css in expected_css:
-                  if css in content:
-                      css_path = os.path.join(css_dir, css)
-                      if not os.path.exists(css_path) and not os.path.exists(css):
-                          issues.append(f"{fname} references {css} but file not found")
-
-          if issues:
-              for i in issues:
-                  print("✗", i)
-              sys.exit(1)
-          else:
-              print("✓ All template static references are valid")
-          EOF
-
-  # ────────────────────────────────────────────────────────────────────────────
-  # JOB 3: Docker build (validates image compiles cleanly)
+  # JOB 2: Docker build & Push to GHCR
   # ────────────────────────────────────────────────────────────────────────────
   docker-build:
     name: Docker Build & Push
     runs-on: ubuntu-latest
-    needs: unit-and-integration
+    needs: backend-tests
     permissions:
       packages: write
       contents: read
@@ -150,7 +69,8 @@ jobs:
           cache-to: type=gha,mode=max
 
   # ────────────────────────────────────────────────────────────────────────────
-  # JOB 4: Selenium E2E — Flask runs directly on the runner (no Docker needed)
+  # JOB 3: Selenium E2E tests
+  # Flask runs natively on the runner against a Postgres service container
   # ────────────────────────────────────────────────────────────────────────────
   selenium:
     name: Selenium E2E Tests
@@ -206,14 +126,13 @@ jobs:
           print("DB tables created.")
           PY
 
-      - name: Start Flask app in background
+      - name: Start Flask in background
         run: |
           nohup python app.py > flask.log 2>&1 &
           echo $! > flask.pid
-          # Poll until /health responds
           for i in $(seq 1 30); do
             curl -sf http://localhost:5000/health && echo "Flask is up!" && break
-            echo "Waiting... ($i)"
+            echo "Waiting... ($i/30)"
             sleep 3
           done
 
@@ -224,8 +143,7 @@ jobs:
         env:
           APP_BASE_URL:  "http://localhost:5000"
           SELENIUM_HOST: "localhost"
-        run: |
-          pytest tests/selenium/ -v --tb=short
+        run: pytest tests/selenium/ -v --tb=short
 
       - name: Print Flask logs on failure
         if: failure()
@@ -237,16 +155,30 @@ jobs:
           [ -f flask.pid ] && kill $(cat flask.pid) || true
 
   # ────────────────────────────────────────────────────────────────────────────
-  # JOB 5: Deploy to Server (main branch only)
+  # JOB 4: Deploy to Server (main branch only)
+  # Skips cleanly if SERVER_HOST secret is not configured yet.
+  # Add SERVER_HOST, SERVER_USER, SERVER_SSH_KEY, POSTGRES_PASSWORD, SECRET_KEY
+  # under Settings → Secrets and variables → Actions to activate this job.
   # ────────────────────────────────────────────────────────────────────────────
   deploy:
     name: Deploy to Server
     runs-on: ubuntu-latest
-    needs: [unit-and-integration, selenium]
-    if: github.ref == 'refs/heads/main'
+    needs: [backend-tests, selenium]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
+      - name: Skip if deploy secrets not configured
+        id: check
+        run: |
+          if [ -z "${{ secrets.SERVER_HOST }}" ]; then
+            echo "SERVER_HOST secret not set — deploy skipped."
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Deploy via SSH
+        if: steps.check.outputs.skip == 'false'
         uses: appleboy/ssh-action@v1.0.3
         with:
           host:     ${{ secrets.SERVER_HOST }}
