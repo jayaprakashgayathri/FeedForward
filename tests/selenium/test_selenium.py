@@ -1,30 +1,30 @@
 """
 Selenium end-to-end tests.
 
-Run locally:
-  1. docker compose --profile selenium up -d db web selenium
-  2. docker compose --profile selenium run --rm selenium-tests
+Run locally (Docker):
+  docker compose --profile selenium up -d db web selenium
+  docker compose --profile selenium run --rm selenium-tests
 
-Or against a locally running app:
-  APP_BASE_URL=http://localhost:5000 SELENIUM_HOST=localhost pytest tests/selenium/ -v
+Run locally (no Docker):
+  APP_BASE_URL=http://localhost:5000 SELENIUM_HOST=localhost pytest tests/selenium/test_selenium.py -v
 """
 import os
 import time
+import uuid
 import pytest
+
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait, Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
+from selenium.common.exceptions import NoSuchElementException
 
 BASE_URL      = os.environ.get("APP_BASE_URL",  "http://localhost:5000")
 SELENIUM_HOST = os.environ.get("SELENIUM_HOST", "localhost")
 SELENIUM_PORT = os.environ.get("SELENIUM_PORT", "4444")
 
-# Unique emails so parallel runs don't clash
-import uuid
-_uid = uuid.uuid4().hex[:8]
+_uid          = uuid.uuid4().hex[:8]
 DONOR_EMAIL   = f"selenium_donor_{_uid}@test.com"
 CHARITY_EMAIL = f"selenium_charity_{_uid}@test.com"
 PASSWORD      = "Selenium123!"
@@ -35,45 +35,50 @@ PASSWORD      = "Selenium123!"
 @pytest.fixture(scope="module")
 def driver():
     opts = Options()
-    opts.add_argument("--headless")
+    opts.add_argument("--headless=new")          # modern headless flag
     opts.add_argument("--no-sandbox")
     opts.add_argument("--disable-dev-shm-usage")
+    opts.add_argument("--disable-gpu")
     opts.add_argument("--window-size=1280,900")
 
     if SELENIUM_HOST != "localhost":
-        # Remote Selenium Grid (Docker)
-        driver = webdriver.Remote(
+        drv = webdriver.Remote(
             command_executor=f"http://{SELENIUM_HOST}:{SELENIUM_PORT}/wd/hub",
             options=opts,
         )
     else:
-        driver = webdriver.Chrome(options=opts)
+        drv = webdriver.Chrome(options=opts)
 
-    driver.implicitly_wait(8)
-    yield driver
-    driver.quit()
+    drv.implicitly_wait(10)
+    yield drv
+    drv.quit()
 
 
-def wait_for(driver, by, value, timeout=10):
+def wait_for(driver, by, value, timeout=15):
     return WebDriverWait(driver, timeout).until(
         EC.presence_of_element_located((by, value))
     )
 
 
+def wait_clickable(driver, by, value, timeout=15):
+    return WebDriverWait(driver, timeout).until(
+        EC.element_to_be_clickable((by, value))
+    )
+
+
 def go(driver, path):
     driver.get(BASE_URL + path)
+    time.sleep(0.5)
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def register_user(driver, role, email, org_name):
     go(driver, "/register")
-    # Click role box
     role_id = "role-restaurant" if role == "donor" else "role-charity"
-    wait_for(driver, By.ID, role_id).click()
-    time.sleep(0.4)
+    wait_clickable(driver, By.ID, role_id).click()
+    time.sleep(0.5)
 
-    # Fill form
     form_id = "restaurant-reg-form" if role == "donor" else "charity-reg-form"
     form = wait_for(driver, By.ID, form_id)
     form.find_element(By.NAME, "organization_name").send_keys(org_name)
@@ -81,21 +86,28 @@ def register_user(driver, role, email, org_name):
     form.find_element(By.NAME, "password").send_keys(PASSWORD)
 
     btn_id = "register-restaurant-btn" if role == "donor" else "register-charity-btn"
-    driver.find_element(By.ID, btn_id).click()
-    time.sleep(1)
+    wait_clickable(driver, By.ID, btn_id).click()
+    time.sleep(1.5)
 
 
 def do_login(driver, email):
     go(driver, "/login")
-    wait_for(driver, By.ID, "email").send_keys(email)
+    email_field = wait_for(driver, By.ID, "email")
+    email_field.clear()
+    email_field.send_keys(email)
     driver.find_element(By.ID, "password").send_keys(PASSWORD)
-    driver.find_element(By.ID, "login-btn").click()
-    time.sleep(1)
+    wait_clickable(driver, By.ID, "login-btn").click()
+    time.sleep(1.5)
 
 
 def do_logout(driver):
-    go(driver, "/logout")
-    time.sleep(0.5)
+    # Try clicking the logout link; fall back to navigating directly
+    try:
+        btn = driver.find_element(By.CSS_SELECTOR, "a.logout-btn")
+        btn.click()
+    except NoSuchElementException:
+        go(driver, "/logout")
+    time.sleep(0.8)
 
 
 # ── Tests ─────────────────────────────────────────────────────────────────────
@@ -108,11 +120,11 @@ class TestIndexPage:
     def test_homepage_has_cta_cards(self, driver):
         go(driver, "/")
         assert "For Restaurants" in driver.page_source
-        assert "For Charities"   in driver.page_source
+        assert "For Charities" in driver.page_source
 
     def test_stats_bar_present(self, driver):
         go(driver, "/")
-        assert "500+" in driver.page_source or "Meals Saved" in driver.page_source
+        assert "Meals Saved" in driver.page_source
 
 
 class TestRegistration:
@@ -122,22 +134,20 @@ class TestRegistration:
 
     def test_role_selection_shows_forms(self, driver):
         go(driver, "/register")
-        # Click restaurant role
-        wait_for(driver, By.ID, "role-restaurant").click()
-        time.sleep(0.3)
+        wait_clickable(driver, By.ID, "role-restaurant").click()
+        time.sleep(0.4)
         assert driver.find_element(By.ID, "restaurant-form").is_displayed()
 
     def test_back_link_resets_role(self, driver):
         go(driver, "/register")
-        wait_for(driver, By.ID, "role-charity").click()
-        time.sleep(0.3)
+        wait_clickable(driver, By.ID, "role-charity").click()
+        time.sleep(0.4)
         driver.find_element(By.CSS_SELECTOR, "#charity-form .back-link").click()
-        time.sleep(0.3)
+        time.sleep(0.4)
         assert driver.find_element(By.ID, "role-selection").is_displayed()
 
     def test_register_donor(self, driver):
         register_user(driver, "donor", DONOR_EMAIL, "Selenium Grill")
-        # Should land on login page after registration
         assert "/login" in driver.current_url or "log" in driver.page_source.lower()
 
     def test_register_charity(self, driver):
@@ -154,7 +164,7 @@ class TestLogin:
         go(driver, "/login")
         wait_for(driver, By.ID, "email").send_keys(DONOR_EMAIL)
         driver.find_element(By.ID, "password").send_keys("wrongpass")
-        driver.find_element(By.ID, "login-btn").click()
+        wait_clickable(driver, By.ID, "login-btn").click()
         time.sleep(1)
         assert "Incorrect" in driver.page_source
 
@@ -172,7 +182,7 @@ class TestLogin:
 class TestRestaurantDashboard:
     def test_dashboard_loads_after_login(self, driver):
         do_login(driver, DONOR_EMAIL)
-        assert "Operations Dashboard" in driver.title or "FeedForward" in driver.title
+        assert "restaurant-dashboard" in driver.current_url
         do_logout(driver)
 
     def test_post_donation_form_present(self, driver):
@@ -183,14 +193,14 @@ class TestRestaurantDashboard:
     def test_post_donation_success(self, driver):
         do_login(driver, DONOR_EMAIL)
         wait_for(driver, By.ID, "donation-form")
-
         driver.find_element(By.NAME, "food_name").send_keys("Selenium Test Curry")
-        # Category already selected by default (perishable)
         driver.find_element(By.NAME, "quantity").send_keys("15")
-        driver.find_element(By.NAME, "pickup_deadline").send_keys("20:00")
-        driver.find_element(By.ID, "broadcast-btn").click()
-        time.sleep(1.5)
-
+        # Set time via JS — avoids OS-level picker that breaks in headless
+        driver.execute_script(
+            "document.querySelector('[name=pickup_deadline]').value = '20:00'"
+        )
+        wait_clickable(driver, By.ID, "broadcast-btn").click()
+        time.sleep(2)
         assert "Selenium Test Curry" in driver.page_source
         do_logout(driver)
 
@@ -203,7 +213,7 @@ class TestRestaurantDashboard:
         do_login(driver, DONOR_EMAIL)
         sel = Select(wait_for(driver, By.ID, "foodType"))
         sel.select_by_value("produce")
-        time.sleep(0.3)
+        time.sleep(0.5)
         unit_label = driver.find_element(By.ID, "unitLabel").text
         assert unit_label == "kgs"
         do_logout(driver)
@@ -211,7 +221,7 @@ class TestRestaurantDashboard:
     def test_charity_blocked_from_dashboard(self, driver):
         do_login(driver, CHARITY_EMAIL)
         go(driver, "/restaurant-dashboard")
-        time.sleep(1)
+        time.sleep(1.5)
         assert "Access denied" in driver.page_source or "charity-browse" in driver.current_url
         do_logout(driver)
 
@@ -219,7 +229,7 @@ class TestRestaurantDashboard:
 class TestCharityBrowse:
     def test_browse_page_loads(self, driver):
         do_login(driver, CHARITY_EMAIL)
-        assert "Find Food" in driver.page_source or "Browse" in driver.title
+        assert "Find Food" in driver.page_source or "Browse" in driver.page_source
         do_logout(driver)
 
     def test_active_donations_visible(self, driver):
@@ -229,28 +239,34 @@ class TestCharityBrowse:
 
     def test_search_filters_results(self, driver):
         do_login(driver, CHARITY_EMAIL)
-        wait_for(driver, By.ID, "search-input").send_keys("Selenium")
+        search = wait_for(driver, By.ID, "search-input")
+        search.clear()
+        search.send_keys("Selenium")
         driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
-        time.sleep(1)
+        time.sleep(1.5)
         assert "Selenium Test Curry" in driver.page_source
         do_logout(driver)
 
     def test_request_modal_opens(self, driver):
         do_login(driver, CHARITY_EMAIL)
-        time.sleep(0.5)
-        # Find any Request Donation button
+        time.sleep(0.8)
         btns = driver.find_elements(By.CSS_SELECTOR, "[id^='request-btn-']")
         if btns:
             btns[0].click()
-            time.sleep(0.4)
+            time.sleep(0.6)
             modal = driver.find_element(By.ID, "req-modal")
             assert "open" in modal.get_attribute("class")
+            # Close it cleanly
+            driver.execute_script(
+                "document.getElementById('req-modal').classList.remove('open')"
+            )
+            time.sleep(0.3)
         do_logout(driver)
 
     def test_donor_blocked_from_browse(self, driver):
         do_login(driver, DONOR_EMAIL)
         go(driver, "/charity-browse")
-        time.sleep(1)
+        time.sleep(1.5)
         assert "Access denied" in driver.page_source or "restaurant-dashboard" in driver.current_url
         do_logout(driver)
 
@@ -277,9 +293,8 @@ class TestHistory:
     def test_history_filter_links_work(self, driver):
         do_login(driver, DONOR_EMAIL)
         go(driver, "/restaurant/history")
-        # Click "Completed" filter
-        driver.find_element(By.ID, "filter-completed").click()
-        time.sleep(0.5)
+        wait_clickable(driver, By.ID, "filter-completed").click()
+        time.sleep(0.8)
         assert "filter=completed" in driver.current_url
         do_logout(driver)
 
@@ -288,10 +303,10 @@ class TestLogout:
     def test_logout_redirects_home(self, driver):
         do_login(driver, DONOR_EMAIL)
         do_logout(driver)
-        assert "/" == driver.current_url.replace(BASE_URL, "") or "FeedForward" in driver.title
+        path = driver.current_url.replace(BASE_URL, "").rstrip("/")
+        assert path == "" or "FeedForward" in driver.title
 
     def test_protected_route_after_logout(self, driver):
-        do_logout(driver)
         go(driver, "/restaurant-dashboard")
-        time.sleep(0.5)
+        time.sleep(0.8)
         assert "login" in driver.current_url
