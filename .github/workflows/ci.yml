@@ -14,9 +14,6 @@ jobs:
 
   # ──────────────────────────────────────────────────────────────────────────
   # JOB 1: Frontend tests
-  # Checks HTML templates exist, CSS variables are present, Jinja2 is valid,
-  # and templates contain required structural elements.
-  # No Python deps needed — pure shell + python3 (pre-installed on runner).
   # ──────────────────────────────────────────────────────────────────────────
   frontend-tests:
     name: Frontend Tests
@@ -59,8 +56,6 @@ jobs:
           exit $MISSING
 
       - name: Check CSS contains required design variables
-        # FIX: grep treats --theme-xxx as flags. Use -e flag or search without
-        # leading dashes to avoid "unrecognized option" errors on some grep versions.
         run: |
           MISSING=0
           for var in "theme-dark" "theme-primary" "theme-bg" "theme-surface"; do
@@ -172,7 +167,6 @@ jobs:
           import os, sys
 
           css_dir = "static" if os.path.isdir("static") else "."
-          # Legacy hex values that should not appear — these belong to old colour scheme
           forbidden_hex = ["#8a7650", "#8e977d", "#ece7d1", "#dbcea5", "#333029"]
           issues = []
 
@@ -188,15 +182,12 @@ jobs:
 
           if issues:
               [print("⚠", i) for i in issues]
-              # Warning only — not a hard failure
           else:
               print("✓ No legacy hardcoded colours found")
           EOF
 
   # ──────────────────────────────────────────────────────────────────────────
   # JOB 2: Unit tests
-  # Tests model properties, helper functions, and pure logic in isolation.
-  # SQLite in-memory — no Docker, no HTTP.
   # ──────────────────────────────────────────────────────────────────────────
   unit-tests:
     name: Unit Tests
@@ -204,75 +195,73 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: pip
-
       - name: Install dependencies
         run: pip install -r requirements.txt
-
-      - name: Run unit tests (model properties only)
-        run: |
-          pytest tests/test_backend.py::TestModelProperties \
-            -v --tb=short
+      - name: Run unit tests
+        run: pytest tests/unit/ -v --tb=short
 
   # ──────────────────────────────────────────────────────────────────────────
-  # JOB 3: Integration tests
-  # Tests all routes end-to-end via Flask test client + SQLite in-memory.
-  # Covers auth, donations, requests, broadcasts — no Docker needed.
+  # JOB 3: Backend tests
+  # ──────────────────────────────────────────────────────────────────────────
+  backend-tests:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run backend tests
+        run: pytest tests/test_backend.py -v --tb=short
+
+  # ──────────────────────────────────────────────────────────────────────────
+  # JOB 4: Integration tests
   # ──────────────────────────────────────────────────────────────────────────
   integration-tests:
     name: Integration Tests
     runs-on: ubuntu-latest
-    needs: unit-tests
+    needs: [unit-tests, backend-tests, frontend-tests]
 
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: pip
-
       - name: Install dependencies
         run: pip install -r requirements.txt
-
-      - name: Run integration tests (all routes + business logic)
-        run: |
-          pytest tests/test_backend.py \
-            --ignore=tests/selenium \
-            --deselect=tests/test_backend.py::TestModelProperties \
-            -v --tb=short
+      - name: Run integration tests
+        run: pytest tests/integration/ -v --tb=short
 
   # ──────────────────────────────────────────────────────────────────────────
-  # JOB 4: Docker build and push to GitHub Container Registry (GHCR)
-  # Builds the production Docker image and pushes it to ghcr.io.
-  # Image is tagged :latest and :<git-sha> for traceability.
-  # Runs only after frontend + integration tests pass.
+  # JOB 5: Docker build and push
   # ──────────────────────────────────────────────────────────────────────────
   docker-build:
     name: Docker Build & Push (GHCR)
     runs-on: ubuntu-latest
-    needs: [frontend-tests, integration-tests]
+    needs: [integration-tests]
     permissions:
       packages: write
       contents: read
 
     steps:
       - uses: actions/checkout@v4
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
@@ -285,10 +274,7 @@ jobs:
           cache-to:   type=gha,mode=max
 
   # ──────────────────────────────────────────────────────────────────────────
-  # JOB 5: Selenium E2E tests
-  # Starts Flask natively on the runner against a real PostgreSQL service.
-  # Uses a real Chrome browser to test the full user journey.
-  # Runs after Docker build to ensure the image is also valid.
+  # JOB 6: Selenium E2E tests
   # ──────────────────────────────────────────────────────────────────────────
   selenium:
     name: Selenium E2E Tests
@@ -322,15 +308,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: pip
-
       - name: Install Python dependencies
         run: pip install -r requirements.txt
-
       - name: Initialise database tables
         run: |
           python - <<'PY'
@@ -341,7 +324,6 @@ jobs:
               db.create_all()
               print("DB tables created.")
           PY
-
       - name: Start Flask in background
         run: |
           nohup python app.py > flask.log 2>&1 &
@@ -356,22 +338,18 @@ jobs:
             sleep 3
           done
           curl -sf http://localhost:5000/health || (echo "Flask failed to start" && cat flask.log && exit 1)
-
       - name: Set up Chrome
         uses: browser-actions/setup-chrome@v1
         with:
           chrome-version: stable
-
       - name: Run Selenium E2E tests
         env:
           APP_BASE_URL:  "http://localhost:5000"
           SELENIUM_HOST: "localhost"
         run: pytest tests/selenium/ -v --tb=short
-
       - name: Print Flask logs on failure
         if: failure()
         run: cat flask.log || true
-
       - name: Stop Flask
         if: always()
         run: |
