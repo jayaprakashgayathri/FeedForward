@@ -10,10 +10,10 @@ user_counter = itertools.count(1)
 @pytest.fixture(scope="session")
 def app():
     cfg = {
-        "TESTING": True, 
+        "TESTING": True,
         "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
-        "WTF_CSRF_ENABLED": False, 
-        "SECRET_KEY": "test-secret", 
+        "WTF_CSRF_ENABLED": False,
+        "SECRET_KEY": "test-secret",
         "LOGIN_DISABLED": False
     }
     application = create_app(cfg)
@@ -26,18 +26,11 @@ def app():
 @pytest.fixture(scope="function")
 def db(app):
     with app.app_context():
-        connection = _db.engine.connect()
-        transaction = connection.begin()
-        
-        # Bind the session to the connection for this test
-        _db.session.bind = connection
-        
         yield _db
-        
-        # Roll back everything and clean up
-        _db.session.remove()
-        transaction.rollback()
-        connection.close()
+        # Clean all data between tests without dropping schema
+        for table in reversed(_db.metadata.sorted_tables):
+            _db.session.execute(table.delete())
+        _db.session.commit()
 
 
 @pytest.fixture(scope="function")
@@ -51,36 +44,33 @@ def client(app):
 # ────────────────────────────────────────────────────────────────────────────
 
 def make_user(role, email, org, password="pass1234"):
-    # Create a unique email for every call to prevent UNIQUE constraint errors
     unique_id = next(user_counter)
     unique_email = f"{unique_id}_{email}"
-    
     u = User(
-        email=unique_email, 
+        email=unique_email,
         password_hash=generate_password_hash(password),
-        organization_name=org, 
+        organization_name=org,
         role=role,
-        phone="", 
-        address="123 Test St", 
-        license_num="", 
+        phone="",
+        address="123 Test St",
+        license_num="",
         reg_num=""
     )
     _db.session.add(u)
-    _db.session.flush() 
+    _db.session.flush()
     return u
 
 
 def make_donation(donor, food_name="Test Food", quantity=10, unit="items",
                   food_category="perishable", pickup_deadline="18:00", status="active", notes=""):
-    # FIXED: Updated argument names to match the model (food_category, pickup_deadline, quantity)
     d = Donation(
-        donor_id=donor.id, 
-        food_name=food_name, 
+        donor_id=donor.id,
+        food_name=food_name,
         food_category=food_category,
-        quantity=quantity, 
-        unit=unit, 
-        pickup_deadline=pickup_deadline, 
-        notes=notes, 
+        quantity=quantity,
+        unit=unit,
+        pickup_deadline=pickup_deadline,
+        notes=notes,
         status=status
     )
     _db.session.add(d)
@@ -90,9 +80,9 @@ def make_donation(donor, food_name="Test Food", quantity=10, unit="items",
 
 def make_request(donation, charity, message="Need this", status="pending"):
     r = DonationRequest(
-        donation_id=donation.id, 
+        donation_id=donation.id,
         charity_id=charity.id,
-        message=message, 
+        message=message,
         status=status
     )
     _db.session.add(r)
@@ -103,15 +93,14 @@ def make_request(donation, charity, message="Need this", status="pending"):
 
 def make_broadcast(charity, food_name="Rice and Beans", quantity=20, unit="items",
                    food_category="produce", needed_by="18:00", notes="", status="open"):
-    # FIXED: Updated argument names to match the model (food_category, quantity)
     bc = CharityBroadcast(
-        charity_id=charity.id, 
+        charity_id=charity.id,
         food_name=food_name,
-        food_category=food_category, 
-        quantity=quantity, 
+        food_category=food_category,
+        quantity=quantity,
         unit=unit,
-        needed_by=needed_by, 
-        notes=notes, 
+        needed_by=needed_by,
+        notes=notes,
         status=status
     )
     _db.session.add(bc)
@@ -121,9 +110,9 @@ def make_broadcast(charity, food_name="Rice and Beans", quantity=20, unit="items
 
 def make_broadcast_response(broadcast, donor, message="We can help", status="pending"):
     r = BroadcastResponse(
-        broadcast_id=broadcast.id, 
+        broadcast_id=broadcast.id,
         donor_id=donor.id,
-        message=message, 
+        message=message,
         status=status
     )
     _db.session.add(r)
@@ -141,13 +130,13 @@ def login(client, email, password="pass1234"):
 # ────────────────────────────────────────────────────────────────────────────
 
 @pytest.fixture
-def donor(db):   return make_user("donor",   "restaurant@test.com", "Test Restaurant")
+def donor(db):   return make_user("donor",   "restaurant@test.com",  "Test Restaurant")
 
 @pytest.fixture
-def donor2(db):  return make_user("donor",   "restaurant2@test.com","Second Restaurant")
+def donor2(db):  return make_user("donor",   "restaurant2@test.com", "Second Restaurant")
 
 @pytest.fixture
-def charity(db): return make_user("charity", "charity@test.com",    "Test Charity NGO")
+def charity(db): return make_user("charity", "charity@test.com",     "Test Charity NGO")
 
 @pytest.fixture
 def charity2(db): return make_user("charity", "charity2@test.com",   "Second Charity")
