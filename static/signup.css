@@ -159,12 +159,16 @@ button[type="submit"] {
   border: none;
   border-radius: 14px;
   background: linear-gradient(to right, var(--primary-earth), var(--secondary-sage));
-  color: white;
+  color: #ffffff;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 12px 24px rgba(19, 34, 39, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
 }
 
 button[type="submit"]:hover {
