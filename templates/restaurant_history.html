@@ -36,6 +36,34 @@
   .stat-tile .value {
     font-size:2.4rem; font-weight:800; letter-spacing:-0.04em; color:var(--text-dark);
   }
+
+  /* Section heading */
+  .section-heading {
+    font-size: 1.15rem; font-weight: 800; letter-spacing: -0.02em;
+    margin: 2rem 0 0.8rem; color: var(--text-dark);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-heading .sub {
+    font-size: 0.82rem; font-weight: 600; color: rgba(9,20,19,0.45); letter-spacing: 0;
+  }
+
+  /* Broadcast response history cards */
+  .broadcast-history-card {
+    background: #fff; border-radius: 16px; padding: 1.4rem; margin-bottom: 12px;
+    border: 1px solid rgba(9,20,19,0.07);
+    box-shadow: 0 2px 10px rgba(9,20,19,0.04);
+  }
+  .bh-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+  .bh-name { font-size: 1rem; font-weight: 800; color: var(--text-dark); }
+  .bh-meta { font-size: 0.78rem; color: rgba(9,20,19,0.55); margin-bottom: 8px; }
+  .bh-status {
+    display: inline-block; font-size: 0.68rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.06em; padding: 4px 10px; border-radius: 40px;
+  }
+  .bh-status.accepted { background: rgba(40,90,72,0.1); color: #285a48; border: 1px solid rgba(40,90,72,0.2); }
+  .bh-status.pending  { background: rgba(245,158,11,0.1); color: #b45309; border: 1px solid rgba(245,158,11,0.2); }
+  .bh-status.declined { background: rgba(9,20,19,0.06); color: rgba(9,20,19,0.5); border: 1px solid rgba(9,20,19,0.08); }
+
   @media(max-width:768px){ .stats-row{grid-template-columns:1fr;} }
 </style>
 {% endblock %}
@@ -75,6 +103,12 @@
       <div class="label"><i class="fa-solid fa-percent"></i> Fulfillment Rate</div>
       <div class="value">{% if total > 0 %}{{ ((completed_count / total) * 100) | int }}%{% else %}—{% endif %}</div>
     </div>
+  </div>
+
+  <!-- ══ SECTION 1: My Donations ══ -->
+  <div class="section-heading">
+    My Donations
+    <span class="sub">(food listings you posted)</span>
   </div>
 
   <!-- Filters -->
@@ -134,5 +168,47 @@
     </div>
     {% endif %}
   </div>
+
+  <!-- ══ SECTION 2: Community Broadcast Responses ══ -->
+  <div class="section-heading" style="margin-top:2.5rem;">
+    Community Request Responses
+    <span class="sub">(offers you sent to charity food requests)</span>
+  </div>
+
+  {% if my_responses %}
+    {% for resp in my_responses %}
+    <div class="broadcast-history-card">
+      <div class="bh-top">
+        <div>
+          <div class="bh-name">{{ resp.broadcast.food_name }}</div>
+          <div class="bh-meta">
+            {{ resp.broadcast.quantity }} {{ resp.broadcast.unit }}
+            &middot; {{ resp.broadcast.category_label }}
+            &middot; Needed by {{ resp.broadcast.needed_by }}
+            &middot; From {{ resp.broadcast.charity_user.organization_name }}
+            &middot; Responded {{ resp.time_ago }}
+          </div>
+          {% if resp.message %}
+          <div style="font-size:0.78rem;font-style:italic;color:rgba(9,20,19,0.5);margin-top:4px;">
+            Your message: "{{ resp.message[:100] }}"
+          </div>
+          {% endif %}
+        </div>
+        <span class="bh-status {{ resp.status }}">{{ resp.status | capitalize }}</span>
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div style="background:#fff;border-radius:16px;padding:2.5rem;text-align:center;
+                color:rgba(9,20,19,0.4);border:1px solid rgba(9,20,19,0.07);">
+      <i class="fa-solid fa-hand-holding-heart" style="font-size:2rem;display:block;margin-bottom:1rem;opacity:0.3;"></i>
+      No community request responses yet.
+      <a href="{{ url_for('restaurant_dashboard') }}"
+         style="display:block;margin-top:12px;color:var(--primary-earth);font-weight:600;font-size:0.9rem;">
+        Browse community needs →
+      </a>
+    </div>
+  {% endif %}
+
 </div>
 {% endblock %}
