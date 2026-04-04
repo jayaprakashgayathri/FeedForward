@@ -8,3 +8,4 @@ __pycache__/
 .gitignore
 .pytest_cache/
 *.egg-info/
+postgres-data/
