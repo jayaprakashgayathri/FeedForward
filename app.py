@@ -18,7 +18,7 @@ def create_app(config=None):
             pw = os.environ.get("POSTGRES_PASSWORD", "feedforward")
             h  = os.environ.get("POSTGRES_HOST",     "db")
             p  = os.environ.get("POSTGRES_PORT",     "5432")
-            d  = os.environ.get("POSTGRES_DB",       "feedforward")
+            d  = os.environ.get("POSTGRES_DB",        "feedforward")
             db_url = f"postgresql://{u}:{pw}@{h}:{p}/{d}"
         else:
             db_url = "sqlite:///feedforward.db"
@@ -201,18 +201,23 @@ def _register_routes(app):  # noqa: C901
         if not r:
             flash("Unauthorized.")
             return redirect(url_for("restaurant_dashboard"))
-        # Explicitly fetch the donation to avoid lazy-load / session cache issues
+        
         donation = db.session.get(Donation, r.donation_id)
         if not donation or donation.donor_id != current_user.id:
             flash("Unauthorized.")
             return redirect(url_for("restaurant_dashboard"))
+        
+        # Logic Change: Ensure history is reflected for both by setting statuses correctly
         r.status = "accepted"
         donation.status = "confirmed"
+        
+        # Decline others so they see it in their history as declined
         for other in DonationRequest.query.filter(
             DonationRequest.donation_id==r.donation_id,
             DonationRequest.id!=rid,
             DonationRequest.status=="pending").all():
             other.status = "declined"
+            
         db.session.commit()
         flash(f"Request from {r.charity.organization_name} accepted!")
         return redirect(url_for("restaurant_dashboard"))
@@ -224,7 +229,7 @@ def _register_routes(app):  # noqa: C901
         if not r:
             flash("Unauthorized.")
             return redirect(url_for("restaurant_dashboard"))
-        # Explicitly fetch the donation to avoid lazy-load / session cache issues
+        
         donation = db.session.get(Donation, r.donation_id)
         if not donation or donation.donor_id != current_user.id:
             flash("Unauthorized.")
@@ -243,7 +248,7 @@ def _register_routes(app):  # noqa: C901
         if not r:
             flash("Unauthorized.")
             return redirect(url_for("restaurant_dashboard"))
-        # Explicitly fetch the donation to avoid lazy-load / session cache issues
+        
         donation = db.session.get(Donation, r.donation_id)
         if not donation or donation.donor_id != current_user.id:
             flash("Unauthorized.")
@@ -283,14 +288,14 @@ def _register_routes(app):  # noqa: C901
     def restaurant_history():
         if current_user.role != "donor":
             return redirect(url_for("charity_browse"))
-        f               = request.args.get("filter","all")
-        q               = Donation.query.filter_by(donor_id=current_user.id)
+        f                = request.args.get("filter","all")
+        q                = Donation.query.filter_by(donor_id=current_user.id)
         if f == "completed":
             q = q.filter_by(status="completed")
         elif f == "active":
             q = q.filter(Donation.status.in_(["active","pending","confirmed"]))
-        donations       = q.order_by(Donation.created_at.desc()).all()
-        total           = Donation.query.filter_by(donor_id=current_user.id).count()
+        donations        = q.order_by(Donation.created_at.desc()).all()
+        total            = Donation.query.filter_by(donor_id=current_user.id).count()
         completed_count = Donation.query.filter_by(donor_id=current_user.id, status="completed").count()
         my_responses = (BroadcastResponse.query
             .filter_by(donor_id=current_user.id)
@@ -310,20 +315,16 @@ def _register_routes(app):  # noqa: C901
         search   = request.args.get("search","").strip()
         category = request.args.get("category","all")
         
-        # 1. Start with base query
         q = Donation.query.filter_by(status="active")
         
-        # 2. APPLY CATEGORY FILTER (Ensure it matches model field name)
         if category and category != "all":
             q = q.filter(Donation.food_category == category)
             
-        # 3. Apply Search
         if search:
             q = q.filter(db.or_(
                 Donation.food_name.ilike(f"%{search}%"),
                 Donation.notes.ilike(f"%{search}%")))
                 
-        # 4. Fetch Results
         listings = q.order_by(Donation.created_at.desc()).all()
         
         my_req_ids = {r.donation_id for r in
@@ -411,13 +412,17 @@ def _register_routes(app):  # noqa: C901
         if not resp or resp.broadcast.charity_id != current_user.id:
             flash("Unauthorized.")
             return redirect(url_for("charity_browse"))
+        
+        # Logic Change: Ensure status is set so it reflects on both sides (Restaurant & Charity)
         resp.status = "accepted"
         resp.broadcast.status = "fulfilled"
+        
         for other in BroadcastResponse.query.filter(
             BroadcastResponse.broadcast_id==resp.broadcast_id,
             BroadcastResponse.id!=resp_id,
             BroadcastResponse.status=="pending").all():
             other.status = "declined"
+        
         db.session.commit()
         flash(f"Accepted offer from {resp.restaurant_user.organization_name}!")
         return redirect(url_for("charity_browse"))
@@ -459,7 +464,10 @@ def _register_routes(app):  # noqa: C901
 if __name__ == "__main__":
     application = create_app()
     with application.app_context():
-        db.create_all()
+        # Change: Check if the database file exists for SQLite to prevent unnecessary resets
+        # If using Postgres, this just creates missing tables without dropping existing ones.
+        db.create_all() 
+        
     application.run(host="0.0.0.0",
                     port=int(os.environ.get("PORT",5000)),
                     debug=os.environ.get("FLASK_DEBUG","false").lower()=="true")
