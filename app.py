@@ -198,11 +198,16 @@ def _register_routes(app):  # noqa: C901
     @login_required
     def accept_request(rid):
         r = db.session.get(DonationRequest, rid)
-        if not r or r.donation.donor_id != current_user.id:
+        if not r:
+            flash("Unauthorized.")
+            return redirect(url_for("restaurant_dashboard"))
+        # Explicitly fetch the donation to avoid lazy-load / session cache issues
+        donation = db.session.get(Donation, r.donation_id)
+        if not donation or donation.donor_id != current_user.id:
             flash("Unauthorized.")
             return redirect(url_for("restaurant_dashboard"))
         r.status = "accepted"
-        r.donation.status = "confirmed"
+        donation.status = "confirmed"
         for other in DonationRequest.query.filter(
             DonationRequest.donation_id==r.donation_id,
             DonationRequest.id!=rid,
@@ -216,12 +221,17 @@ def _register_routes(app):  # noqa: C901
     @login_required
     def decline_request(rid):
         r = db.session.get(DonationRequest, rid)
-        if not r or r.donation.donor_id != current_user.id:
+        if not r:
+            flash("Unauthorized.")
+            return redirect(url_for("restaurant_dashboard"))
+        # Explicitly fetch the donation to avoid lazy-load / session cache issues
+        donation = db.session.get(Donation, r.donation_id)
+        if not donation or donation.donor_id != current_user.id:
             flash("Unauthorized.")
             return redirect(url_for("restaurant_dashboard"))
         r.status = "declined"
         if not DonationRequest.query.filter_by(donation_id=r.donation_id, status="pending").count():
-            r.donation.status = "active"
+            donation.status = "active"
         db.session.commit()
         flash("Request declined.")
         return redirect(url_for("restaurant_dashboard"))
@@ -230,11 +240,16 @@ def _register_routes(app):  # noqa: C901
     @login_required
     def complete_pickup(rid):
         r = db.session.get(DonationRequest, rid)
-        if not r or r.donation.donor_id != current_user.id:
+        if not r:
+            flash("Unauthorized.")
+            return redirect(url_for("restaurant_dashboard"))
+        # Explicitly fetch the donation to avoid lazy-load / session cache issues
+        donation = db.session.get(Donation, r.donation_id)
+        if not donation or donation.donor_id != current_user.id:
             flash("Unauthorized.")
             return redirect(url_for("restaurant_dashboard"))
         r.status = "completed"
-        r.donation.status = "completed"
+        donation.status = "completed"
         db.session.commit()
         flash("Marked as picked up!")
         return redirect(url_for("restaurant_dashboard"))
