@@ -53,7 +53,7 @@
     padding: 10px; border-radius: 50px; text-align: center; width: 100%; display: block;
   }
 
-  /* ── Sidebar broadcast form ── */
+  /* Sidebar broadcast form */
   .sidebar-section-title { font-size: 1.05rem; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 0.3rem; color: var(--theme-dark); }
   .sidebar-section-sub { font-size: 0.82rem; color: rgba(9,20,19,0.6); margin-bottom: 1.2rem; line-height: 1.5; }
   .sidebar-divider { height: 1px; background: rgba(9,20,19,0.07); margin: 1.5rem 0; }
@@ -73,7 +73,7 @@
   .sb-unit { padding-right: 12px; font-weight: 700; color: var(--theme-primary); font-size: 0.82rem; flex-shrink: 0; }
   .sb-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
-  /* ── My Broadcasts list ── */
+  /* My Broadcasts list */
   .broadcast-item {
     background: #fff; border: 1px solid rgba(9,20,19,0.07); border-radius: 16px;
     padding: 1rem; margin-bottom: 10px; transition: box-shadow 0.2s;
@@ -117,7 +117,6 @@
 
 <main class="charity-layout">
 
-  <!-- ══ LEFT: Browse restaurant listings ══ -->
   <div class="browse-content">
     <header class="browse-header">
       <h1>Find Food for Your Community.</h1>
@@ -154,23 +153,25 @@
         {% for d in listings %}
         <div class="listing-card" id="listing-{{ d.id }}">
           <div class="card-meta">
-            <span class="editorial-pill">{{ d.category_label }}</span>
+            <span class="editorial-pill">{{ d.food_category|capitalize }}</span>
             <span class="expiry-tag"><i class="fa-regular fa-clock"></i> By {{ d.pickup_deadline }}</span>
           </div>
           <h3>{{ d.food_name }}</h3>
           <p class="restaurant-name"><i class="fa-solid fa-shop"></i> {{ d.donor.organization_name }}</p>
           <div class="compact-details">
             <div><strong>Quantity</strong><span>{{ d.quantity }} {{ d.unit }}</span></div>
-            <div><strong>Posted</strong><span>{{ d.time_ago }}</span></div>
+            <div><strong>Posted</strong><span>{{ d.created_at.strftime('%Y-%m-%d') if d.created_at else 'Recently' }}</span></div>
           </div>
           {% if d.notes %}
           <p style="font-size:0.78rem;color:rgba(9,20,19,0.55);font-style:italic;margin-bottom:14px;">{{ d.notes }}</p>
           {% endif %}
+          
           {% if d.id in my_req_ids %}
             <span class="already-requested"><i class="fa-solid fa-check"></i> Request Sent</span>
           {% else %}
-            <button class="btn-primary btn-sm full-width" id="request-btn-{{ d.id }}"
-                    onclick="openModal({{ d.id }}, '{{ d.food_name|e }}', '{{ d.quantity }} {{ d.unit }}', '{{ d.donor.organization_name|e }}')">
+            <button class="btn-primary btn-sm full-width" 
+                    id="request-btn-{{ d.id }}"
+                    onclick="openModal({{ d.id }}, '{{ d.food_name|replace("'", "\\'") }}', '{{ d.quantity }} {{ d.unit }}', '{{ d.donor.organization_name|replace("'", "\\'") }}')">
               Request Donation
             </button>
           {% endif %}
@@ -185,14 +186,12 @@
     </section>
   </div>
 
-  <!-- ══ RIGHT SIDEBAR ══ -->
   <aside class="request-sidebar">
 
-    <!-- ── SECTION 1: Post a Food Request form ── -->
     <div class="sidebar-section-title">Post a Food Request</div>
     <p class="sidebar-section-sub">
       Tell all restaurants exactly what your community needs.
-      They'll see your request and can offer to fulfil it directly.
+      They'll see your request and can offer to fulfill it directly.
     </p>
 
     <form action="{{ url_for('new_broadcast') }}" method="POST" id="broadcast-form">
@@ -248,7 +247,6 @@
 
     <div class="sidebar-divider"></div>
 
-    <!-- ── SECTION 2: My Food Requests + restaurant offers ── -->
     <div class="sidebar-section-title" style="display:flex;align-items:center;gap:8px;margin-bottom:0.8rem;">
       My Food Requests
       {% if my_broadcasts %}
@@ -265,8 +263,8 @@
           <div style="flex:1;min-width:0;">
             <div class="broadcast-item-name">{{ bc.food_name }}</div>
             <div class="broadcast-item-meta">
-              {{ bc.quantity }} {{ bc.unit }} &middot; {{ bc.category_label }}
-              &middot; Needed by {{ bc.needed_by }} &middot; {{ bc.time_ago }}
+              {{ bc.quantity }} {{ bc.unit }} &middot; {{ bc.food_category|capitalize }}
+              &middot; Needed by {{ bc.needed_by }}
             </div>
           </div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;margin-left:8px;">
@@ -314,7 +312,6 @@
           <div class="offer-card" id="offer-{{ offer.id }}">
             <div class="offer-card-top">
               <span class="offer-org">{{ offer.restaurant_user.organization_name }}</span>
-              <span class="offer-time">{{ offer.time_ago }}</span>
             </div>
             {% if offer.message %}
             <div class="offer-msg">"{{ offer.message }}"</div>
@@ -359,7 +356,6 @@
   </aside>
 </main>
 
-<!-- ══ REQUEST DONATION MODAL ══ -->
 <div class="modal-overlay" id="req-modal">
   <div class="modal-box">
     <h3>Request Donation</h3>
@@ -371,7 +367,7 @@
         <div class="input-wrap">
           <textarea name="message" id="modal-message"
                     placeholder="e.g. We serve 50 residents nightly and can pick up by 7pm..."
-                    style="min-height:90px;"></textarea>
+                    style="min-height:90px; width: 100%; border-radius: 12px; padding: 10px; border: 1.5px solid rgba(9,20,19,0.1); outline: none;"></textarea>
         </div>
       </div>
       <div class="modal-actions">
@@ -390,6 +386,7 @@
 
 {% block scripts %}
 <script>
+// Auto-hide flash messages
 setTimeout(() => {
   document.querySelectorAll('.flash-msg').forEach(f => {
     f.style.transition = 'opacity 0.5s ease';
@@ -398,27 +395,49 @@ setTimeout(() => {
   });
 }, 4000);
 
+/**
+ * Opens the request modal for any restaurant listing.
+ * name, qty, and restaurant parameters are escaped to handle quotes.
+ */
 function openModal(id, name, qty, restaurant) {
-  document.getElementById('modal-form').action = '/donation/' + id + '/request';
-  document.getElementById('modal-subtitle').textContent = 'Requesting from ' + restaurant;
-  document.getElementById('modal-food-tag').innerHTML =
-    '<i class="fa-solid fa-box" style="color:var(--theme-primary);margin-right:8px;"></i>' + qty + ' — ' + name;
+  const form = document.getElementById('modal-form');
+  const subtitle = document.getElementById('modal-subtitle');
+  const foodTag = document.getElementById('modal-food-tag');
+  
+  form.action = '/donation/' + id + '/request';
+  subtitle.textContent = 'Requesting from ' + restaurant;
+  foodTag.innerHTML = '<i class="fa-solid fa-box" style="color:var(--theme-primary);margin-right:8px;"></i>' + qty + ' — ' + name;
   document.getElementById('modal-message').value = '';
   document.getElementById('req-modal').classList.add('open');
 }
-function closeModal() { document.getElementById('req-modal').classList.remove('open'); }
-document.getElementById('req-modal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+
+function closeModal() { 
+  document.getElementById('req-modal').classList.remove('open'); 
+}
+
+// Close modal when clicking on the background overlay
+document.getElementById('req-modal').addEventListener('click', function(e) { 
+  if (e.target === this) closeModal(); 
+});
 
 function updateBcUnit() {
   const cat = document.getElementById('bc-cat').value;
   const span = document.getElementById('bc-unit');
   const hidden = document.getElementById('bc-unit-hidden');
   const label = document.getElementById('bc-qty-label');
+  
   if (cat === 'produce') {
-    span.textContent = 'kgs'; hidden.value = 'kgs'; label.textContent = 'Weight (kgs) *';
+    span.textContent = 'kgs'; 
+    hidden.value = 'kgs'; 
+    label.textContent = 'Weight (kgs) *';
   } else {
-    span.textContent = 'items'; hidden.value = 'items'; label.textContent = 'Quantity *';
+    span.textContent = 'items'; 
+    hidden.value = 'items'; 
+    label.textContent = 'Quantity *';
   }
 }
+
+// Ensure the category unit is correct on page load
+document.addEventListener('DOMContentLoaded', updateBcUnit);
 </script>
 {% endblock %}
