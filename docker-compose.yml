@@ -18,7 +18,7 @@ services:
       POSTGRES_PASSWORD: feedforward_secret
       POSTGRES_DB:       feedforward
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - ./postgres-data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     healthcheck:
@@ -99,7 +99,3 @@ services:
     ]
     profiles:
       - selenium
-
-volumes:
-  pgdata:
-    driver: local
