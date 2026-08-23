@@ -2,7 +2,7 @@
 
 **Food Donation Management System**
 
-FeedForward is a full-stack web application that bridges the gap between restaurants and food establishments with surplus food, and charitable organizations, shelters, and community kitchens in need of donations. It streamlines the entire donation lifecycle — from food listing and pickup scheduling to delivery confirmation and impact tracking — and is deployed using modern DevOps practices including containerization, CI/CD pipelines, and cloud infrastructure.
+FeedForward is a web application that bridges the gap between restaurants and food establishments with surplus food, and charitable organizations, shelters, and community kitchens in need of donations. It streamlines the entire donation lifecycle — from food listing and pickup scheduling to delivery confirmation and impact tracking — and is deployed using modern DevOps practices including containerization and CI/CD pipelines.
 
 > College DevOps Project · 2026
 
@@ -10,19 +10,19 @@ FeedForward is a full-stack web application that bridges the gap between restaur
 
 ## Table of Contents
 
-- [Overview](#-overview)
-- [Objectives](#-objectives)
-- [User Roles](#-user-roles)
-- [Core Modules](#-core-modules)
-- [Tech Stack](#-tech-stack)
-- [Architecture](#-architecture)
-- [Docker Services](#-docker-services)
-- [Database Schema](#-database-schema)
-- [API Endpoints](#-api-endpoints)
-- [Getting Started](#-getting-started)
-- [Environment Variables](#-environment-variables)
-- [Roadmap](#-roadmap)
-- [Contributing](#-contributing)
+- [Overview](#overview)
+- [Objectives](#objectives)
+- [User Roles](#user-roles)
+- [Core Modules](#core-modules)
+- [Tech Stack](#tech-stack)
+- [Architecture](#architecture)
+- [Docker Services](#docker-services)
+- [Database Schema](#database-schema)
+- [API Endpoints](#api-endpoints)
+- [Getting Started](#getting-started)
+- [Environment Variables](#environment-variables)
+- [Roadmap](#roadmap)
+- [Contributing](#contributing)
 
 ---
 
@@ -34,8 +34,6 @@ Thousands of tons of edible food are wasted daily by restaurants, hotels, and ca
 
 - Reduce food waste by enabling restaurants to list surplus food quickly and easily
 - Help charities and shelters access food donations in their vicinity
-- Coordinate volunteers for efficient pickup and delivery logistics
-- Provide admins with full visibility and control over the donation pipeline
 - Demonstrate real-world DevOps practices in a production-grade project
 - Track and visualize the social and environmental impact of donations
 
@@ -45,158 +43,114 @@ Thousands of tons of edible food are wasted daily by restaurants, hotels, and ca
 |------|-------------|--------------|
 | **Donor** | Restaurants, hotels, catering services | Post food, schedule pickup, view history |
 | **Recipient** | NGOs, shelters, orphanages, kitchens | Browse food, claim donations, give feedback |
-| **Volunteer** | Individuals helping with logistics | Accept delivery tasks, confirm handoffs |
-| **Admin** | System administrators | Manage users, monitor donations, reports |
 
 ## Core Modules
 
 ### Authentication & User Management
-- Role-based registration and login (Donor, Recipient, Volunteer, Admin)
-- JWT-based authentication with refresh tokens
-- Profile management with organization details
-- Email verification on signup
+- Role-based registration and login (Donor, Recipient)
 
 ### Food Listing Module
 - Post available food with name, category, quantity, and expiry time
-- Categories: Cooked Meals, Raw Ingredients, Packaged Food, Beverages, Bakery
+- Categories: Cooked Meals, Raw Ingredients, Packaged Food
 - Real-time expiry countdown timer per listing
-- Auto-expiry when time runs out
-- Image upload support
 
 ### Donation Request Module
 - Browse nearby available food listings
-- Filter by food type, distance, dietary type (veg/non-veg), and quantity
 - Reserve/claim a listing before it expires
 - Automatic request confirmation to donor
 
-### Volunteer & Logistics Module
-- Available pickups surfaced on volunteer dashboard
-- Accept and manage delivery tasks
-- QR code-based handoff confirmation at pickup and dropoff
-- Route display via Leaflet.js maps integration
 
-### Admin Dashboard
-- Overview of active, completed, and expired donations
-- User management: approve, suspend, delete accounts
-- Impact reports: meals saved, food weight, CO₂ reduced
-- Notification and alert management
-
-### Notification System
-- Email notifications for donation status updates
-- In-app alerts for new listings near recipients
-- Expiry warning alerts for donors
-
-### Impact Tracker
-- Total meals donated per donor
-- Total food weight saved from waste
-- Leaderboard of top donors and volunteers
-
-## 🛠 Tech Stack
+## Tech Stack
 
 | Layer | Technology | Purpose |
 |-------|------------|---------|
-| UI/UX Design | Figma | Wireframes and design prototypes |
-| Frontend | React + Tailwind CSS | User interface and interactions |
-| Backend | Express.js (Node.js) | REST API and business logic |
-| Database | PostgreSQL | Relational data storage |
-| Authentication | JWT + bcrypt | Secure login and sessions |
+| Backend | Flask (Python) | Web framework, routing, business logic |
+| Templating | Jinja2 | Server-rendered HTML pages |
+| ORM | Flask-SQLAlchemy | Database models and queries |
+| Database | PostgreSQL (via psycopg2-binary) | Relational data storage |
+| Authentication | Flask-Login | Session-based login and user management |
 | Containerization | Docker + Docker Compose | Multi-container deployment |
 | CI/CD | GitHub Actions | Automated testing and deployment |
-| Hosting | Render / Railway | Free-tier cloud hosting |
-| Maps | Leaflet.js | Location and routing display |
-| Email | Nodemailer | Notification emails |
+| Testing | pytest + pytest-flask | Backend unit/integration tests |
+| E2E Testing | Selenium | Automated browser/UI testing |
 
 ## Architecture
 
-The DevOps pipeline is structured to demonstrate industry-grade practices including containerization, continuous integration, and automated deployment. Each service is isolated in its own Docker container, orchestrated via Docker Compose, and automatically deployed through a GitHub Actions CI/CD pipeline on every push to `main`.
+The DevOps pipeline is structured to demonstrate industry-grade practices including containerization, continuous integration, and automated deployment. The application is containerized with Docker, orchestrated via Docker Compose, and automatically tested and deployed through a GitHub Actions CI/CD pipeline on every push to `main`.
 
 | Stage | Tool | Description |
 |-------|------|-------------|
 | Version Control | GitHub | Source code management and branching |
 | CI/CD Pipeline | GitHub Actions | Auto build, test, and deploy on push |
-| Containerization | Docker | Each service in its own container |
-| Orchestration | Docker Compose | Multi-container coordination |
-| Container Registry | Docker Hub | Store and distribute Docker images |
-| Reverse Proxy | Nginx | Route traffic to frontend and backend |
+| Containerization | Docker | Application packaged into a container image |
+| Orchestration | Docker Compose | Multi-container coordination (app + database) |
 | Database Persistence | Docker Volumes | PostgreSQL data persists on restart |
 | Environment Config | ENV Variables | Separate dev and production configs |
-| Monitoring | Prometheus + Grafana | App health metrics and dashboards |
-| Hosting | Render / Railway | Free cloud deployment platform |
 
 ## Docker Services
 
-| Container | Base Image | Port | Role |
-|-----------|------------|------|------|
-| `frontend` | `node:alpine` | 3000 | Serves the React application |
-| `backend` | `node:alpine` | 8000 | Runs the Express.js REST API |
-| `db` | `postgres:15` | 5432 | PostgreSQL database |
-| `nginx` | `nginx:alpine` | 80 | Reverse proxy and load balancer |
-| `redis` | `redis:alpine` | 6379 | Session caching (optional) |
+| Container | Base Image | Role |
+|-----------|------------|------|
+| `app` | Python | Runs the Flask application via Gunicorn |
+| `db` | postgres | PostgreSQL database |
 
 ## Database Schema
 
-**Core tables:** `users`, `organizations`, `food_listings`, `donation_requests`, `deliveries`, `feedback`, `notifications`, `impact_logs`
+**Core tables:** `users`, `organizations`, `food_listings`, `donation_requests`,
 
 **Key relationships:**
 - 1 user → 1 organization
 - 1 donor → many food listings
 - 1 listing → many donation requests
-- 1 request → 1 delivery
-- 1 volunteer → many deliveries
-- 1 request → 1 feedback entry
-- 1 user → many notifications
-- 1 listing → 1 impact log
-
-> See [`docs/database-schema.md`](docs/database-schema.md) for full column-level table definitions (types, keys, constraints).
 
 ## API Endpoints
 
 | Method | Endpoint | Description | Role |
 |--------|----------|--------------|------|
-| POST | `/api/auth/register` | Register a new user | All |
-| POST | `/api/auth/login` | Login and get JWT token | All |
-| GET | `/api/listings` | Get all available food listings | All |
-| POST | `/api/listings` | Create a new food listing | Donor |
-| PATCH | `/api/listings/:id` | Update a listing status | Donor |
-| POST | `/api/requests` | Submit a donation request | Recipient |
-| GET | `/api/requests/:id` | Get request details | Auth |
-| POST | `/api/deliveries` | Assign volunteer to delivery | Volunteer |
-| PATCH | `/api/deliveries/:id` | Update delivery status | Volunteer |
-| POST | `/api/feedback` | Submit donation feedback | Recipient |
+| POST | `/register` | Register a new user | All |
+| POST | `/login` | Log in a user | All |
+| GET | `/listings` | Get all available food listings | All |
+| POST | `/listings` | Create a new food listing | Donor |
+| PATCH | `/listings/:id` | Update a listing status | Donor |
+| POST | `/requests` | Submit a donation request | Recipient |
+| GET | `/requests/:id` | Get request details | Auth |
 
 ## Getting Started
 
 ### Prerequisites
-- [Docker](https://www.docker.com/) & Docker Compose
-- Node.js 18+ (for local, non-containerized development)
-- PostgreSQL 15 (if running the DB outside Docker)
+- Docker & Docker Compose
+- Python 3.10+ (for local, non-containerized development)
+- PostgreSQL (if running the database outside Docker)
 
 ### Quick Start (Docker)
 
 ```bash
 # Clone the repository
-git clone https://github.com/<your-username>/feedforward.git
-cd feedforward
+git clone https://github.com/jayaprakashgayathri/FeedForward.git
+cd FeedForward
 
 # Copy environment templates
 cp .env.example .env
 
-# Build and start all services
+# Build and start the app
 docker-compose up --build
 ```
 
 ### Local Development (without Docker)
 
 ```bash
-# Backend
-cd backend
-npm install
-npm run dev
+# Create and activate a virtual environment
+python -m venv venv
+source venv/bin/activate   # On Windows: venv\Scripts\activate
 
-# Frontend
-cd frontend
-npm install
-npm run dev
+# Install dependencies
+pip install -r requirements.txt
+
+# Set environment variables
+cp .env.example .env
+
+# Run the app
+python app.py
 ```
 
 ## Environment Variables
@@ -204,32 +158,27 @@ npm run dev
 Create a `.env` file in the project root (see `.env.example`):
 
 ```env
-# Backend
-PORT=8000
+FLASK_APP=app.py
+FLASK_ENV=development
+SECRET_KEY=your_secret_key
 DATABASE_URL=postgresql://user:password@db:5432/feedforward
-JWT_SECRET=your_jwt_secret
-JWT_REFRESH_SECRET=your_refresh_secret
 
 # Email
 SMTP_HOST=smtp.example.com
 SMTP_PORT=587
 SMTP_USER=your_email
 SMTP_PASS=your_password
-
-# Frontend
-VITE_API_BASE_URL=http://localhost:8000
-VITE_MAP_TILE_URL=https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png
 ```
 
-## 🗺 Roadmap
+## Roadmap
 
 - [ ] Real-time notifications via WebSockets
-- [ ] Mobile app (React Native)
+- [ ] Mobile app support
 - [ ] SMS alerts for low-connectivity regions
 - [ ] Multi-language support
 - [ ] Advanced analytics dashboard for admins
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! To contribute:
 
@@ -241,4 +190,4 @@ Contributions are welcome! To contribute:
 
 Please make sure your code passes CI checks before submitting.
 
-<p align="center">Built with ❤️ to fight food waste and food insecurity.</p>
+<p align="center">Built with dedication to fight food waste and food insecurity.</p>
